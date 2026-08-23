@@ -1,0 +1,247 @@
+[
+  {
+    "id": "seed-cbt-001",
+    "kind": "qa",
+    "category": "coping",
+    "title": "5-4-3-2-1 Grounding Technique for Panic Attacks",
+    "text": "Question: How can I ground myself when feeling a sudden panic attack?\nAnswer: Use the 5-4-3-2-1 sensory grounding technique. Look around and name 5 things you can see, 4 things you can physically touch or feel, 3 distinct sounds you can hear, 2 scents you can smell, and 1 taste you can perceive. Take a slow 4-second breath in and 6-second breath out to activate your parasympathetic nervous system."
+  },
+  {
+    "id": "seed-cbt-002",
+    "kind": "qa",
+    "category": "coping",
+    "title": "Box Breathing for Acute Stress",
+    "text": "Question: What breathing exercise helps lower acute stress quickly?\nAnswer: Box Breathing (Four-Square Breathing) is highly effective. Inhale through your nose for 4 seconds, hold your breath for 4 seconds, exhale smoothly through your mouth for 4 seconds, and hold empty for 4 seconds. Repeat for 4 full cycles."
+  },
+  {
+    "id": "seed-cbt-003",
+    "kind": "qa",
+    "category": "coping",
+    "title": "Cognitive Restructuring - Challenging Catastrophic Thinking",
+    "text": "Question: How do I challenge my automatic negative thoughts when I worry the worst will happen?\nAnswer: Identify the cognitive distortion (catastrophizing). Ask yourself 3 evidence-testing questions: 1. What is the objective evidence supporting this fear? 2. What is the realistic worst-case scenario and can I handle it? 3. What is the most likely middle-ground outcome? Replace the automatic thought with an evidence-based balanced statement."
+  },
+  {
+    "id": "seed-cbt-004",
+    "kind": "qa",
+    "category": "coping",
+    "title": "Behavioral Activation for Low Energy and Depression",
+    "text": "Question: How do I start doing things when I feel unmotivated and depressed?\nAnswer: Behavioral activation counters depressive withdrawal. Break activities down to micro-steps (the 5-minute rule). Commit to engaging in an action for just 5 minutes without requiring yourself to finish or enjoy it. Motivation typically follows action rather than preceding it."
+  },
+  {
+    "id": "seed-cbt-005",
+    "kind": "qa",
+    "category": "coping",
+    "title": "Progressive Muscle Relaxation (PMR)",
+    "text": "Question: What physical technique helps release body tension before sleep?\nAnswer: Progressive Muscle Relaxation involves systematically tensing muscle groups for 5 seconds and releasing them for 10 seconds. Start at your toes, move to calves, thighs, abdomen, chest, shoulders, jaw, and forehead. Focus on the contrasting sensation of tension versus physical release."
+  },
+  {
+    "id": "seed-cbt-006",
+    "kind": "qa",
+    "category": "coping",
+    "title": "TIPP Skills for Distress Tolerance (DBT)",
+    "text": "Question: What can I do when my emotional distress feels completely overwhelming?\nAnswer: Use DBT TIPP skills: Temperature (splash cold water on your face to trigger the mammalian dive reflex and slow your heart rate), Intense Exercise (2 minutes of jumping jacks), Paced Breathing (slow deep belly breathing), and Paired Muscle Relaxation."
+  },
+  {
+    "id": "seed-cbt-007",
+    "kind": "qa",
+    "category": "coping",
+    "title": "Worry Time Technique for General Anxiety",
+    "text": "Question: How do I stop worrying all day long?\nAnswer: Schedule a dedicated 15-minute 'Worry Time' each day at the same hour. When worries arise during the day, write them down briefly on a worry list and defer thinking about them until your scheduled Worry Time. During Worry Time, review the list and categorize worries as actionable or non-actionable."
+  },
+  {
+    "id": "seed-cbt-008",
+    "kind": "qa",
+    "category": "coping",
+    "title": "Thought Record 7-Column Exercise",
+    "text": "Question: What is a structured way to evaluate difficult thoughts?\nAnswer: A Thought Record records: 1. Situation, 2. Emotions (0-100%), 3. Automatic Thought, 4. Evidence Supporting Thought, 5. Evidence Against Thought, 6. Alternative Balanced Thought, 7. Re-rated Emotions (0-100%). Practicing this weekly rewires habitual thinking patterns."
+  },
+  {
+    "id": "seed-cbt-009",
+    "kind": "qa",
+    "category": "coping",
+    "title": "Decatastrophizing Questions",
+    "text": "Question: How can I lessen the power of a scary future scenario?\nAnswer: Ask: 'If the worst happened, what steps would I actually take to deal with it? Who could help me? Have I survived difficult events before?' Shifting from 'what if' to 'how would I cope' restores a sense of agency."
+  },
+  {
+    "id": "seed-cbt-010",
+    "kind": "qa",
+    "category": "coping",
+    "title": "Self-Compassion Pause for Self-Criticism",
+    "text": "Question: How do I handle harsh inner self-criticism when I make a mistake?\nAnswer: Use Kristin Neff's Self-Compassion Pause: 1. Acknowledge pain ('This is a moment of suffering'), 2. Recognize common humanity ('Suffering is a part of life and shared by many'), 3. Offer kindness ('May I be gentle and supportive with myself right now')."
+  },
+  {
+    "id": "seed-psy-001",
+    "kind": "qa",
+    "category": "psychoeducation",
+    "title": "Understanding Generalized Anxiety Disorder (GAD)",
+    "text": "Question: What is Generalized Anxiety Disorder and how does it affect daily life?\nAnswer: Generalized Anxiety Disorder (GAD) involves persistent, excessive worry about everyday concerns such as health, work, or school for at least 6 months. Physical symptoms include restlessness, fatigue, difficulty concentrating, muscle tension, and sleep disturbance. CBT is a primary evidence-based intervention."
+  },
+  {
+    "id": "seed-psy-002",
+    "kind": "qa",
+    "category": "psychoeducation",
+    "title": "Understanding Depression and Anhedonia",
+    "text": "Question: Why do I lose interest in things I used to enjoy when depressed?\nAnswer: Anhedonia (inability to feel pleasure) is a core neurobiological symptom of depression caused by altered dopamine and reward pathways. It is not personal laziness or a lack of willpower. Small, structured engagement in routine activities helps reactivate dopamine circuits over time."
+  },
+  {
+    "id": "seed-psy-003",
+    "kind": "qa",
+    "category": "psychoeducation",
+    "title": "What is Exposure Therapy for Phobias?",
+    "text": "Question: How does exposure therapy help overcome phobias like fear of heights or public speaking?\nAnswer: Exposure therapy works through habituation and extinction learning. By confronting feared stimuli in a safe, controlled manner (such as WebXR virtual reality environments), your brain learns that feared outcomes do not occur and that anxiety naturally peaks and decreases over time without needing escape."
+  },
+  {
+    "id": "seed-psy-004",
+    "kind": "qa",
+    "category": "psychoeducation",
+    "title": "The Window of Tolerance Model",
+    "text": "Question: Why do I alternate between feeling overwhelmed and feeling completely numb?\nAnswer: The Window of Tolerance describes the optimal zone of nervous system arousal. Hyperarousal (anxiety, rage, panic) occurs above the window; hypoarousal (numbness, freeze, dissociation) occurs below it. Grounding and regulation techniques help pull your nervous system back inside your window."
+  },
+  {
+    "id": "seed-psy-005",
+    "kind": "qa",
+    "category": "psychoeducation",
+    "title": "Understanding Panic Attacks vs Anxiety Attacks",
+    "text": "Question: Is a panic attack the same as feeling anxious?\nAnswer: Panic attacks are sudden, intense surges of fear that peak within minutes, accompanied by severe physical symptoms (racing heart, shortness of breath, feeling of dread or dying). General anxiety builds gradually over hours or days around specific triggers. Neither is physically dangerous, though both feel frightening."
+  },
+  {
+    "id": "seed-psy-006",
+    "kind": "qa",
+    "category": "psychoeducation",
+    "title": "The Stress-Vulnerability Model",
+    "text": "Question: Why do some people react more strongly to stress than others?\nAnswer: The Stress-Vulnerability Model explains that mental health outcomes depend on an interaction between biological/genetic predispositions (vulnerability) and environmental stressors. Protective factors like coping skills, social support, and healthy routine increase stress resilience."
+  },
+  {
+    "id": "seed-psy-007",
+    "kind": "qa",
+    "category": "psychoeducation",
+    "title": "Sleep Hygiene and Mental Health",
+    "text": "Question: How does sleep affect mood and anxiety?\nAnswer: Sleep disruption directly impairs prefrontal emotional regulation and heightens amygdala reactivity. Key sleep hygiene rules: 1. Consistent wake time, 2. Reserve bed strictly for sleep and intimacy, 3. Stop screen exposure 60 minutes prior, 4. Keep room cool and dark."
+  },
+  {
+    "id": "seed-psy-008",
+    "kind": "qa",
+    "category": "psychoeducation",
+    "title": "Understanding Imposter Syndrome in Students",
+    "text": "Question: Why do I constantly feel like a fraud who will be exposed?\nAnswer: Imposter Syndrome involves chronic self-doubt and feeling that achievements are due to luck rather than competence. It is extremely common among students and high-achievers. Remind yourself that feelings of self-doubt are thoughts, not objective reflections of skill."
+  },
+  {
+    "id": "seed-psy-009",
+    "kind": "qa",
+    "category": "psychoeducation",
+    "title": "The Role of Heart Rate Variability (HRV) in Stress",
+    "text": "Question: What does Heart Rate Variability (HRV) tell us about stress?\nAnswer: HRV measures the variation in time intervals between consecutive heartbeats. Higher HRV indicates high parasympathetic tone and physiological resilience. Lower HRV indicates sympathetic overload and acute stress. VR exposure therapy monitors HRV to track stress adaptation in real time."
+  },
+  {
+    "id": "seed-psy-010",
+    "kind": "qa",
+    "category": "psychoeducation",
+    "title": "Cognitive Distortions: Black-and-White Thinking",
+    "text": "Question: What is all-or-nothing thinking?\nAnswer: All-or-nothing (black-and-white) thinking views situations in binary extremes (e.g. perfect vs total failure). Recognizing shades of grey allows for nuanced self-assessment and reduces perfectionistic anxiety."
+  },
+  {
+    "id": "seed-cri-001",
+    "kind": "qa",
+    "category": "crisis",
+    "title": "Emergency Crisis Response Protocol - India (Tele-MANAS)",
+    "text": "Question: What emergency helpline should I call for mental health crisis support in India?\nAnswer: In India, call Tele-MANAS (Tele Mental Health Assistance and Networking Across States) at 14416 or 1800-891-4416 for 24/7 free, confidential mental health support in multiple languages. For medical emergencies or immediate physical danger, call national emergency 112."
+  },
+  {
+    "id": "seed-cri-002",
+    "kind": "qa",
+    "category": "crisis",
+    "title": "International Crisis Hotlines and Resources",
+    "text": "Question: Where can I find immediate help if I am in immediate crisis outside India?\nAnswer: In the US and Canada, call or text 988 to reach the Suicide & Crisis Lifeline. In the UK, call 111 for NHS mental health services or 116 123 for Samaritans. Globally, visit findahelpline.com to locate free, confidential, 24/7 emergency support in your country."
+  },
+  {
+    "id": "seed-cri-003",
+    "kind": "qa",
+    "category": "crisis",
+    "title": "Building a Personal Safety Plan for Distress",
+    "text": "Question: What should be in a mental health safety plan?\nAnswer: A Safety Plan includes: 1. My personal warning signs of a crisis, 2. Internal coping strategies (breathing, grounding), 3. People and social settings that provide distraction, 4. Trusted friends/family to contact for help, 5. Professional crisis contacts, 6. Steps to make my environment safe."
+  },
+  {
+    "id": "seed-cri-004",
+    "kind": "qa",
+    "category": "crisis",
+    "title": "De-escalation Principles for Severe Agitation",
+    "text": "Question: How can a clinician or peer de-escalate someone experiencing intense distress?\nAnswer: Use calm, low-pitched vocal tones, maintain open non-threatening body posture, validate feelings ('I can see how overwhelming this is'), avoid arguing or logical debates, offer simple choices, and ensure physical safety."
+  },
+  {
+    "id": "seed-cri-005",
+    "kind": "qa",
+    "category": "crisis",
+    "title": "Immediate Actions for Suicidal Thoughts",
+    "text": "Question: What should I do right now if I feel I cannot keep myself safe?\nAnswer: If you cannot keep yourself safe, reach out immediately: call Tele-MANAS at 14416 (India) or 988 (US), contact your doctor, or go to the nearest emergency room. Tell someone you trust right now. You do not have to carry this alone."
+  },
+  {
+    "id": "seed-faq-001",
+    "kind": "qa",
+    "category": "faq",
+    "title": "Is AURA AI Companion a Substitute for Therapy?",
+    "text": "Question: Is the AURA AI Companion a replacement for a licensed psychologist or psychiatrist?\nAnswer: No. AURA is an AI-powered psychoeducational companion designed for self-guided coping strategies, emotional tracking, and peer support. It does not provide medical diagnosis, formal psychotherapeutic treatment, or crisis intervention."
+  },
+  {
+    "id": "seed-faq-002",
+    "kind": "qa",
+    "category": "faq",
+    "title": "How Does VR Exposure Therapy Work on This Platform?",
+    "text": "Question: How do the WebXR VR therapy modules function?\nAnswer: The platform offers WebXR immersive exposure environments (such as Skyline Terrace for heights or Lecture Hall for public speaking). Patients wear VR headsets or view in-browser while real-time Bluetooth heart rate / HRV telemetry monitors stress adaptation during guided clinical stages."
+  },
+  {
+    "id": "seed-faq-003",
+    "kind": "qa",
+    "category": "faq",
+    "title": "How is Patient Data Kept Private and Anonymized?",
+    "text": "Question: How is my mental health screening and journal data protected?\nAnswer: All patient data is encrypted in transit and at rest. Admin national reporting tools utilize a strict one-way anonymization pipeline aggregating metrics by region without identifiers, adhering to Indian DPDP Act 2023 guidelines."
+  },
+  {
+    "id": "seed-faq-004",
+    "kind": "qa",
+    "category": "faq",
+    "title": "What Clinical Scales Are Used for Screening?",
+    "text": "Question: What questionnaires are used to assess anxiety and depression levels?\nAnswer: The platform integrates standard validated clinical scales: PHQ-9 (Patient Health Questionnaire-9 for depressive severity) and GAD-7 (Generalized Anxiety Disorder-7 for anxiety severity), with automatic clinical band scoring."
+  },
+  {
+    "id": "seed-faq-005",
+    "kind": "qa",
+    "category": "faq",
+    "title": "What Triggers a Doctor Alert or Escalation?",
+    "text": "Question: How are high-risk scores or crisis situations reported to doctors?\nAnswer: Severe PHQ-9/GAD-7 screening scores, panic SOS activations, or distress patterns in peer community posts automatically flag patient records on the Doctor Triage Dashboard and generate real-time clinical alerts."
+  },
+  {
+    "id": "seed-faq-006",
+    "kind": "qa",
+    "category": "faq",
+    "title": "How to Schedule an Appointment with a Doctor?",
+    "text": "Question: How do I book a session with a psychiatrist or clinical psychologist?\nAnswer: Navigate to the Appointments tab in the patient portal, select an available doctor, choose a date and time slot, and submit the booking request. Confirmation will update your dashboard calendar."
+  },
+  {
+    "id": "seed-faq-007",
+    "kind": "qa",
+    "category": "faq",
+    "title": "What Equipment is Needed for WebXR VR Sessions?",
+    "text": "Question: Do I need an expensive VR headset to participate in VR therapy?\nAnswer: No. WebXR sessions run directly inside modern web browsers (Chrome/Edge/Safari) on laptops, tablets, or smartphones. Optional Quest/Meta headsets provide full 6DoF immersion with controllers."
+  },
+  {
+    "id": "seed-faq-008",
+    "kind": "qa",
+    "category": "faq",
+    "title": "How Does Pseudonymous Peer Community Work?",
+    "text": "Question: Is my real name visible when posting on the community forum?\nAnswer: No. Community posts use pseudonymous display handles. All posts pass through automated distress pre-filtering to ensure safety before publication."
+  },
+  {
+    "id": "seed-faq-009",
+    "kind": "qa",
+    "category": "faq",
+    "title": "What to Do If I Experience Panic During a VR Session?",
+    "text": "Question: What happens if I get too anxious inside a VR scenario?\nAnswer: Click or select the 'Panic Exit' button at any point in the scene to immediately terminate the VR environment, exit to safety, and launch guided grounding instructions."
+  },
+  {
+    "id": "seed-faq-010",
+    "kind": "qa",
+    "category": "faq",
+    "title": "How Often Should I Fill Mood and Screening Trackers?",
+    "text": "Question: How frequently should I complete PHQ-9 / GAD-7 and log mood?\nAnswer: Mood logging can be done daily. Clinical screening (PHQ-9 / GAD-7) is recommended bi-weekly to track meaningful longitudinal progress without fatigue."
+  }
+]

@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import List, Optional
 
 import httpx
@@ -50,10 +51,21 @@ class GeminiEmbeddingProvider(EmbeddingProvider):
                     for text in batch
                 ]
             }
-            resp = httpx.post(url, headers=headers, json=payload, timeout=self.timeout)
-            resp.raise_for_status()
+            for attempt in range(5):
+                resp = httpx.post(url, headers=headers, json=payload, timeout=self.timeout)
+                if resp.status_code == 429:
+                    wait = min(2 ** attempt * 2, 60)
+                    logger.warning("Gemini 429 rate limit, retrying in %ds (attempt %d/5)", wait, attempt + 1)
+                    time.sleep(wait)
+                    continue
+                resp.raise_for_status()
+                break
+            else:
+                resp.raise_for_status()
             for emb in resp.json().get("embeddings", []):
                 vectors.append(emb["values"])
+            if start + MAX_GEMINI_BATCH < len(texts):
+                time.sleep(1)
         return vectors
 
 

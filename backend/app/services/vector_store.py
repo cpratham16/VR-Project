@@ -168,6 +168,79 @@ class VectorStoreService:
         )
         return len(chunks)
 
+    def upsert_batch(self, records: List[Dict[str, Any]]) -> int:
+        """Batch chunk, embed, and store multiple documents.
+        Each record must have: doc_id, text. Optional: kind, category, status.
+        """
+        if not records:
+            return 0
+            
+        all_chunks = []
+        all_metadata = []
+        
+        for rec in records:
+            text = rec["text"]
+            chunks = chunk_text(text)
+            for index, chunk in enumerate(chunks):
+                all_chunks.append(chunk)
+                all_metadata.append({
+                    "doc_id": rec["doc_id"],
+                    "kind": rec.get("kind", "statement"),
+                    "category": rec.get("category", "general"),
+                    "status": rec.get("status", ""),
+                    "chunk_index": index,
+                    "total_chunks": len(chunks),
+                    "text": chunk,
+                    "created_at": "now",
+                })
+                
+        if not all_chunks:
+            return 0
+            
+        vectors = embed_documents(all_chunks)
+        points = []
+        
+        for meta, vector in zip(all_metadata, vectors):
+            point_id = str(uuid.uuid5(_DOC_UUID_NS, f"{meta['doc_id']}:{meta['chunk_index']}"))
+            points.append(
+                qdrant_models.PointStruct(
+                    id=point_id,
+                    vector=vector,
+                    payload=meta
+                )
+            )
+            
+        self.ensure_collection()
+        # Qdrant client handles its own bulk batching under the hood for large upserts
+        self._client.upsert(collection_name=self.collection_name, points=points)
+        logger.info("Upserted batch of %d documents (%d chunks)", len(records), len(points))
+        return len(points)
+
+    def search(self, query: str, limit: int = 5, filter_kwargs: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
+        """Dense semantic search returning ranked payload dicts."""
+        if not query.strip() or not self._collection_exists():
+            return []
+            
+        query_vector = embed_documents([query])[0]
+        
+        q_filter = None
+        if filter_kwargs:
+            conditions = [
+                qdrant_models.FieldCondition(key=k, match=qdrant_models.MatchValue(value=v))
+                for k, v in filter_kwargs.items()
+            ]
+            q_filter = qdrant_models.Filter(must=conditions)
+            
+        hits = self._client.query_points(
+            collection_name=self.collection_name,
+            query=query_vector,
+            limit=limit,
+            query_filter=q_filter,
+            with_payload=True,
+        )
+        
+        return [hit.payload for hit in hits.points if hit.payload]
+
     def get_document(self, doc_id: str) -> Dict[str, Any]:
         """Retrieve all chunks belonging to a document by its source ID."""
         if not self._collection_exists():
