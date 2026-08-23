@@ -8,6 +8,7 @@ from qdrant_client.http import models as qdrant_models
 
 from app.core.config import settings
 from app.services.embeddings import embed_documents, embed_sparse_documents
+from app.services.ranking import ranking_service
 
 logger = logging.getLogger("app.services.vector_store")
 
@@ -289,6 +290,15 @@ class VectorStoreService:
         )
         
         return [hit.payload for hit in hits.points if hit.payload]
+
+    def search_hybrid(self, query: str, limit: int = 5, filter_kwargs: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
+        """Hybrid search combining dense and sparse results via RRF."""
+        dense_results = self.search(query, limit=20, filter_kwargs=filter_kwargs)
+        sparse_results = self.sparse_search(query, limit=20, filter_kwargs=filter_kwargs)
+        
+        return ranking_service.reciprocal_rank_fusion(
+            dense_results, sparse_results, limit=limit
+        )
 
     def get_document(self, doc_id: str) -> Dict[str, Any]:
         """Retrieve all chunks belonging to a document by its source ID."""
