@@ -1,15 +1,14 @@
 ## Current Status
-- Active phase: A
-- Last completed iteration: A6 — Performance pass (Phase A complete)
+- Active phase: B
+- Last completed iteration: B2 — Knowledge base ingestion
 - Status: Complete
-- What changed: Applied renderer-level GPU optimizations to both VR scenes — hardware foveation, physically correct lights, color management, and draw sorting; downscaled shadow maps 2048→1024; tuned physics solver iterations; removed shadow work from distant skyline geometry.
-- New/modified modules: frontend/src/pages/patient/vr/VRSessionRunner.tsx
+- What changed: Built a multi-source orchestration pipeline to curate and ingest raw corpora + authored clinical seeds into Qdrant.
+- New/modified modules: `backend/app/services/ingestion.py` (adapters), `backend/app/seed_rag.py` (CLI), `backend/data/seed_curated.json` (40 clinical authored chunks), `backend/tests/test_ingestion.py`. Added batch upsert + explicit dense search query to `vector_store.py`. Added retry/backoff for Gemini 429 errors.
 - Key decisions made:
-  - `renderer="antialias: true; physicallyCorrectLights: true; colorManagement: true; foveationLevel: 2; sortObjects: true"` on both scenes.
-  - Shadow maps reduced to 1024×1024 (~75% shadow GPU cost cut, negligible visual delta at deck/lecture viewing distances).
-  - Physics solver limited to `iterations: 2; tolerance: 0.001` (safe: only one slow-moving dynamic prop exists).
-  - Distant buildings excluded from shadow cast/receive (below fog range, invisible benefit).
-- Dependencies added/removed: None.
-- Verification performed: `tsc -b && vite build` passes clean; diff inspected as surgical.
-- Known issues / follow-ups: Ambient audio still streams from CDN (`cdn.aframe.io`); bundling local lightweight .mp3 assets requires sourcing license-free files (deferred). Chunk size >500kB warning persists (code-splitting candidate for a future iteration).
-- Next iteration: B1 (Phase B)
+  - Excluded confusing/irrelevant raw corpora (sentiment_analysis, comprehensive CDC stats) to keep knowledge base clean.
+  - Vetted requirement fulfilled by explicitly creating `seed_curated.json` (covering CBT techniques, 5-4-3-2-1, safety plans, FAQ mapping) to guarantee grounding quality, injected alongside deduped counseling statements.
+  - Bulk ingestion using `fastembed` proved highly efficient (offline, limitless); Gemini hit 429 tier limits quickly on bulk runs.
+- Dependencies added: None.
+- Verification performed: Unit tests (adapter mapping fidelity) + live stack verification -> pipeline ingested ~2.1k mixed corpus chunks. Executed live Qdrant `query_points` verifying relevance against topical probes ('panic attack', 'VR therapy').
+- Known issues / follow-ups: Gemini free tier heavily throttles embedded batch calls over 100 docs. Local `fastembed` is optimal for initial ingest; Qdrant `query_points` now set up for B3/B4.
+- Next iteration: B3 (Phase B) — Sparse retrieval (BM25)

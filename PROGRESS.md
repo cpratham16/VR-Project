@@ -88,7 +88,7 @@
   - `frontend/src/App.tsx`, `MainLayout.tsx`
 - **Reason:** Complete delivery of Phase 5 — Iterations 12 & 13 Admin/Gov Panel as specified in `PRD.md`.
 
-### 2026-08-23 � Iteration A1: Lighting & materials pass
+### 2026-08-23 � Iteration A1: Lighting & materials pass
 - **Status:** Complete
 - **Summary:** Upgraded VR Exposure Therapy scenes (Acrophobia & Glossophobia) to use PBR materials and introduced soft real-time directional shadow casting and dynamic multi-light environmental lighting.
 - **Files touched:** frontend/src/pages/patient/vr/VRSessionRunner.tsx
@@ -99,7 +99,7 @@
 - **Issues / blockers:** Backend tests require VS Build Tools (will address in backend phase).
 - **Follow-ups:** Proceed to A2 for controller interactions.
 
-### 2026-08-23 � Iteration A2: Controller-based interaction
+### 2026-08-23 � Iteration A2: Controller-based interaction
 - **Status:** Complete
 - **Summary:** Enabled WebXR immersive mode, added controller-based interaction (laser-controls) for both VR scenes, and implemented a custom A-Frame component to handle stage advancement.
 - **Files touched:** frontend/src/pages/patient/vr/VRSessionRunner.tsx
@@ -110,7 +110,7 @@
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to A3 for Physics layer.
 
-### 2026-08-23 � Iteration A3: Physics Layer
+### 2026-08-23 � Iteration A3: Physics Layer
 - **Status:** Complete
 - **Summary:** Integrated frame-physics-system (cannon-es) to provide realistic collisions and physics responses within both VR scenarios.
 - **Files touched:** frontend/src/pages/patient/vr/VRSessionRunner.tsx
@@ -121,7 +121,7 @@
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to A4 for Spatial audio.
 
-### 2026-08-23 � Iteration A4: Spatial Audio
+### 2026-08-23 � Iteration A4: Spatial Audio
 - **Status:** Complete
 - **Summary:** Integrated spatialized audio environments using -sound primitives. Added global ambient wind for acrophobia scenes and positional crowd-murmur loops for lecture scenes, with volume modulated by intensity.
 - **Files touched:** frontend/src/pages/patient/vr/VRSessionRunner.tsx
@@ -132,7 +132,7 @@
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to A5 for Session telemetry.
 
-### 2026-08-23 � Iteration A5: Session telemetry
+### 2026-08-23 � Iteration A5: Session telemetry
 - **Status:** Complete
 - **Summary:** Extended the VRSession model and schema to include 	ime_in_scene, interaction_count, and completion_status. Updated frontend telemetry submissions and Patient Detail view to monitor engagement metrics in real-time.
 - **Files touched:** backend/app/models/vr.py, backend/app/schemas/vr.py, backend/app/api/v1/patient_vr.py, frontend/src/pages/patient/vr/VRSessionRunner.tsx, frontend/src/pages/doctor/PatientDetail.tsx
@@ -143,13 +143,49 @@
 - **Issues / blockers:** Local asyncpg compiling blocked by Windows build tools; frontend validated.
 - **Follow-ups:** Proceed to A6 for Performance pass.
 
-### 2026-08-24 � Iteration A6: Performance pass (Phase A complete)
+### 2026-08-24 � Iteration A6: Performance pass (Phase A complete)
 - **Status:** Complete
-- **Summary:** Applied renderer-level GPU optimizations to both VR scenes � hardware foveation, physically correct lights, color management, and draw sorting; downscaled shadow maps 2048?1024; tuned physics solver iterations; removed shadow work from distant skyline geometry.
+- **Summary:** Applied renderer-level GPU optimizations to both VR scenes � hardware foveation, physically correct lights, color management, and draw sorting; downscaled shadow maps 2048?1024; tuned physics solver iterations; removed shadow work from distant skyline geometry.
 - **Files touched:** frontend/src/pages/patient/vr/VRSessionRunner.tsx
 - **Tests/checks:** npm run build (Success), git diff inspected (surgical, 7 insertions / 6 deletions)
-- **Acceptance criteria:** Pass � renderer flags active, no regressions to controllers/telemetry/audio
+- **Acceptance criteria:** Pass � renderer flags active, no regressions to controllers/telemetry/audio
 - **Rules compliance:** Pass
 - **Decisions & rationale:** Foveation level 2 balances peripheral quality vs GPU cost; physics iterations safe to lower since only one slow dynamic prop exists; building shadows skipped as they fall below fog range.
 - **Issues / blockers:** Local .mp3 bundling deferred pending license-free audio sourcing; CDN audio retained for now.
 - **Follow-ups:** Phase A complete. Proceed to Phase B per IMPLEMENTATION_PLAN.md.
+
+### 2026-08-24 — Iteration B1: Vector store setup
+- **Status:** Complete
+- **Summary:** Stood up a Qdrant vector database (docker-compose service + `qdrant-client`), defined the embedding pipeline with a dual provider (Google Gemini `gemini-embedding-001` primary via plain httpx, local `fastembed` ONNX fallback), and implemented an overlap-aware chunking strategy plus a `VectorStoreService` (ensure-collection, upsert, get-by-id, delete, count). Pipeline schema was designed from a full audit of every file in `archive/` and `Combined Data/` (column-level inspection of 8 corpora).
+- **Files touched:** `docker-compose.yml`, `backend/requirements.txt`, `backend/app/core/config.py`, `.env.example`, `backend/app/services/embeddings.py` (new), `backend/app/services/vector_store.py` (new), `backend/tests/test_vector_store.py` (new), `CLAUDE.md`, `PROGRESS.md`
+- **Tests/checks:**
+  - `pytest` full suite: **39/39 pass** (6 new vector-store tests: chunking, in-memory round-trip, idempotent re-upsert, delete, dimension check)
+  - Live-stack round-trip vs Docker Qdrant `v1.19.0` with local fastembed: upsert→count→get-by-ID→delete OK, collection schema confirmed (size 768, Cosine, keyword indexes on doc_id/kind/category/status)
+  - Live-Gemini round-trips (real API): single-chunk + 4-chunk multi-chunk, chunk_index/order/total_chunks verified, cleaned up (count back to 0)
+  - `git diff` inspected — surgical, 7 files, 488 insertions, no deletions; secrets scan (gsk_/AIza/AQ.Ab/sk-) clean
+- **Acceptance criteria:** Pass — a test document round-trips (chunked → embedded → stored → retrievable by ID) both in-memory (hermetic unit tests) and against the live Qdrant server.
+- **Rules compliance:** Pass
+- **Decisions & rationale:**
+  - `EMBEDDING_PROVIDER=auto` → Gemini if `GEMINI_API_KEY` set else local fastembed; both fixed at **768-dim** so the collection stays interchangeable between providers.
+  - Pin Qdrant server `v1.19.0` == `qdrant-client==1.19.0` to avoid client/server version-check warnings.
+  - Qdrant image ships no wget/curl → healthcheck via bash `/dev/tcp` to localhost:6333.
+  - Chunking `CHUNK_SIZE_CHARS=1000` / `CHUNK_OVERLAP_CHARS=100`, paragraph→sentence→hard-split; deterministic UUIDv5 point IDs for idempotent re-ingestion.
+  - Corpus audit drove payload schema: `kind` (qa/statement/post/intent) + `status` risk label (e.g. Suicidal/Depression) + `category`, enabling B4/B6 to filter high-risk exemplars out of generation context.
+- **Issues / blockers:** User's Groq + Gemini API keys were briefly present in the `.env.example` working tree during the session (pasted into the template file; never committed — repo secrets scan clean). Keys were removed from `.env.example`; the Gemini key was relocated to gitignored `backend/.env`. **Action required: user should rotate both keys.**
+- **Follow-ups:** Proceed to B2 (Knowledge base ingestion) — bulk-chunk/embed the corpora into `knowledge_chunks`.
+
+### 2026-08-28 — Iteration B2: Knowledge base ingestion
+- **Status:** Complete
+- **Summary:** Built data curation and ingestion pipeline parsing multi-schema corpora via targeted Source Adapters, mapping raw entries to uniform formats (kind, category, status labels). Explicitly authored 40 clinical/FAQ seeds to fulfill the "vetted" CBT & protocol requirement. Orchestrated batched upserts via Qdrant Client.
+- **Files touched:**  `backend/app/services/vector_store.py`, `embeddings.py`, `ingestion.py` (new), `seed_rag.py` (new), `backend/tests/test_ingestion.py` (new), `backend/data/seed_curated.json` (new).
+- **Tests/checks:**
+  - `pytest` suite added coverage for each adapter and E2E idempotent pipeline structure; 45/45 pass.
+  - CLI `seed_rag.py` run against Docker Qdrant, ingesting cap of 2,115 deduplicated documents yielding 2,126 chunks successfully.
+  - Queries utilizing raw dense search retrieved accurate clinical grounding (e.g. boxed breathing context fetched immediately).
+- **Acceptance criteria:** Pass — Target corpora and explicit CBT/psycho/crisis seeds exist in database and are proven successfully queryable. 
+- **Rules compliance:** Pass
+- **Decisions & rationale:**
+  - Fastembed invoked for bulk processing; Gemini encountered 429 constraints during rapid ingestion.
+  - Skipped unstructured/noisy datasets (sentiment analysis, CDC survey metrics).
+- **Issues / blockers:** None.  
+- **Follow-ups:** Use query structure built for sparse search testing in B3.
