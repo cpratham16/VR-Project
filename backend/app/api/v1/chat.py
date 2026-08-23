@@ -12,6 +12,7 @@ from app.api.deps import get_current_user
 from app.schemas.chat import ChatMessageCreate, ChatMessageResponse, ChatSessionResponse
 from app.services.ai_companion import ai_companion_service
 from app.services.risk_engine import risk_engine_service
+from app.services.vector_store import vector_store
 
 router = APIRouter()
 
@@ -92,9 +93,17 @@ async def send_chat_message(
     chat_history = [{"sender": m.sender, "content": m.content} for m in history_records[-6:]]
 
     # 5. Generate AI response
+    # --- Retrieving context ---
+    context_chunks = vector_store.search_hybrid(
+        query=msg_in.message.strip(),
+        limit=5,
+        rerank=True
+    )
+    
     assistant_text, used_rag = await ai_companion_service.generate_response(
         user_message=msg_in.message.strip(),
         chat_history=chat_history,
+        context_chunks=context_chunks,
         phq9_band=phq9_band,
         gad7_band=gad7_band
     )

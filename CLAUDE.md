@@ -1,13 +1,14 @@
 ## Current Status
 - Active phase: B
-- Last completed iteration: B5 — Reranking integration
+- Last completed iteration: B6 — Generation layer update
 - Status: Complete
-- What changed: Integrated a Cross-Encoder reranker (`cross-encoder/ms-marco-MiniLM-L-6-v2`) to polish top-K results from the RRF-fused retrieval pipeline. Updated `search_hybrid` to toggle reranking at runtime.
-- New/modified modules: `backend/app/core/config.py`, `backend/app/services/ranking.py`, `backend/app/services/vector_store.py`, `tests/test_reranking.py`.
+- What changed: Connected the Hybrid RAG retrieval pipeline to the Groq LLM. Implemented XML-based grounding context assembly and strict `[ID]` citation validation to prevent hallucinations.
+- New/modified modules: `backend/app/services/ai_companion.py`, `backend/app/services/response_processor.py` (new), `backend/app/api/v1/chat.py`, `tests/test_generation.py`.
 - Key decisions made:
-  - Added `ENABLE_RERANKING` toggle to allow high-speed RRF-only retrieval when latency constraints are tight.
-  - Used standard `sentence-transformers` CrossEncoder implementation for local high-accuracy reranking.
-- Dependencies added: `sentence-transformers==6.0.0`.
-- Verification performed: pytest full suite 48/48 pass (added reranker accuracy test confirming precise demotion of keyword-noisy results). Confirmed model download + inference functionality.
-- Known issues / follow-ups: Reranking is compute-heavy; future B6 LLM integration should pass top-K-reranked results to avoid LLM context-window waste.
-- Next iteration: B6 (Phase B) — Generation layer update
+  - Context Injection: System prompt now uses `<context id='doc_id'>TEXT</context>` tags to ensure the LLM understands retrieval sources.
+  - Citation Enforcement: `validate_and_strip_citations` post-processor uses regex to strip any citation `[ID]` that does not correspond to a retrieved chunk, preventing model hallucination.
+  - Integration: Chat API now resolves RAG context via `vector_store.search_hybrid` and passes it to `ai_companion_service`.
+- Dependencies added: None.
+- Verification performed: pytest full suite 49/49 pass (added `test_generation_pipeline_with_citations_and_stripping` validating citation format and halluncination-stripping).
+- Known issues / follow-ups: None.
+- Next iteration: B7 (Phase B) — Observability instrumentation

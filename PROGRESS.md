@@ -220,3 +220,19 @@
   - Enabled modular reranking toggle (`ENABLE_RERANKING`) for performance/latency tuning flexibility.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to B6 (Generation layer update) to connect RAG context to the Groq/generation pipeline.
+
+### 2026-08-28 — Iteration B6: Generation layer update
+- **Status:** Complete
+- **Summary:** Connected the Hybrid RAG retrieval pipeline (dense+sparse+RRF+cross-encoder) to the Groq LLM (`llama-3.3-70b-versatile`). Implemented XML-based grounding context assembly and a strict regex-based `[ID]` citation validator post-processor to ensure the LLM only cites authorized sources.
+- **Files touched:** `backend/app/services/ai_companion.py`, `backend/app/services/response_processor.py` (new), `backend/app/api/v1/chat.py`, `backend/tests/test_generation.py`.
+- **Tests/checks:**
+  - `pytest` full suite: **49/49 pass**.
+  - New test `test_generation_pipeline_with_citations_and_stripping`: mocks context + LLM, asserts injected XML format and successful stripping of illegitimate `[ghost-id]` citations. 
+  - Verified system prompt integration; updated existing `test_ai_chat.py` fallback generation path to accommodate citation integration.
+- **Acceptance criteria:** Pass — Chatbot grounded in evidence, citations strictly validated, hallucinations stripped.
+- **Rules compliance:** Pass
+- **Decisions & rationale:**
+  - Citation format: Mandatory `[ID]` in output + strict post-processor validation (silent strip of unauthorized).
+  - Context format: XML `<context id='...'>` tags for clear structure for the LLM.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to B7 (Observability instrumentation).

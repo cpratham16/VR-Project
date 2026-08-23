@@ -31,6 +31,7 @@ async def test_ai_companion_fallback_generation():
     reply, used_rag = await ai_companion_service.generate_response(
         user_message="I'm feeling very stressed about my grades.",
         chat_history=[],
+        context_chunks=[],
         phq9_band="Mild",
         gad7_band="Moderate"
     )
