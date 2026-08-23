@@ -189,3 +189,19 @@
   - Skipped unstructured/noisy datasets (sentiment analysis, CDC survey metrics).
 - **Issues / blockers:** None.  
 - **Follow-ups:** Use query structure built for sparse search testing in B3.
+
+### 2026-08-24 — Iteration B3: Sparse retrieval (BM25)
+- **Status:** Complete
+- **Summary:** Integrated sparse embeddings (BM25) via `fastembed.SparseTextEmbedding` alongside our dense vectors. Configured Qdrant collection to support named vectors (`dense` and `sparse`) and implemented a dedicated `sparse_search` method. Re-ingested the full corpora via `seed_rag` utilizing the updated multi-vector schema.
+- **Files touched:** `backend/app/core/config.py`, `backend/app/services/embeddings.py`, `backend/app/services/vector_store.py`, `backend/tests/test_vector_store.py`, `CLAUDE.md`, `PROGRESS.md`
+- **Tests/checks:**
+  - `pytest` full suite: **46/46 pass** (added specific unit test `test_sparse_search_keyword_precision` evaluating dense vs sparse behavior)
+  - Raw Qdrant `query_points` verified with distinctive keyword probes ("14416" -> Emergency protocol seed, "TIPP skills" -> distress tolerance seed, "imposter syndrome" -> student fraud FAQ seed) resulting in rank 1 hits.
+- **Acceptance criteria:** Pass — Keyword queries return relevant chunks ranked sensibly, validated on exact clinical IDs, terminology, and seed titles.
+- **Rules compliance:** Pass
+- **Decisions & rationale:**
+  - Transitioned the collection to named vectors (`dense` for nomic-embed, `sparse` for BM25) to natively support multi-vector indexing in Qdrant.
+  - Used native `using='sparse'` client parameter configuration inside Qdrant calls to search the keyword space rather than using local TF-IDF math.
+  - Retained fastembed for BM25 weighting computations as it is fast, offline, and standardized for the Python Qdrant stack.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to B4 (Dense retrieval + RRF fusion) where we fuse dense and sparse search rankings.

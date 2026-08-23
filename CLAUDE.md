@@ -1,14 +1,14 @@
 ## Current Status
 - Active phase: B
-- Last completed iteration: B2 — Knowledge base ingestion
+- Last completed iteration: B3 — Sparse retrieval (BM25)
 - Status: Complete
-- What changed: Built a multi-source orchestration pipeline to curate and ingest raw corpora + authored clinical seeds into Qdrant.
-- New/modified modules: `backend/app/services/ingestion.py` (adapters), `backend/app/seed_rag.py` (CLI), `backend/data/seed_curated.json` (40 clinical authored chunks), `backend/tests/test_ingestion.py`. Added batch upsert + explicit dense search query to `vector_store.py`. Added retry/backoff for Gemini 429 errors.
+- What changed: Integrated sparse embeddings (BM25 via `fastembed.SparseTextEmbedding`) using named vectors (`dense`/`sparse`) in Qdrant; implemented `sparse_search` and verified precise keyword retrieval.
+- New/modified modules: `backend/app/core/config.py`, `backend/app/services/embeddings.py`, `backend/app/services/vector_store.py`, `backend/tests/test_vector_store.py`.
 - Key decisions made:
-  - Excluded confusing/irrelevant raw corpora (sentiment_analysis, comprehensive CDC stats) to keep knowledge base clean.
-  - Vetted requirement fulfilled by explicitly creating `seed_curated.json` (covering CBT techniques, 5-4-3-2-1, safety plans, FAQ mapping) to guarantee grounding quality, injected alongside deduped counseling statements.
-  - Bulk ingestion using `fastembed` proved highly efficient (offline, limitless); Gemini hit 429 tier limits quickly on bulk runs.
+  - Transitioned Qdrant collection to named vectors (`dense` for default embedding, `sparse` for BM25) to cleanly support hybrid retrieval.
+  - Used `using='sparse'` native Qdrant construct inside the `query_points` API to perform keyword matches without requiring external logic.
+  - Retained local `fastembed` `Qdrant/bm25` (fully offline) for index construction to avoid Gemini API limits.
 - Dependencies added: None.
-- Verification performed: Unit tests (adapter mapping fidelity) + live stack verification -> pipeline ingested ~2.1k mixed corpus chunks. Executed live Qdrant `query_points` verifying relevance against topical probes ('panic attack', 'VR therapy').
-- Known issues / follow-ups: Gemini free tier heavily throttles embedded batch calls over 100 docs. Local `fastembed` is optimal for initial ingest; Qdrant `query_points` now set up for B3/B4.
-- Next iteration: B3 (Phase B) — Sparse retrieval (BM25)
+- Verification performed: pytest full suite passing with 46/46 tests (added `test_sparse_search_keyword_precision`). Recreated collection live via `seed_rag.py` and ran manual sparse queries ("14416", "imposter syndrome"), which yielded relevant clinical seeds as rank 1 hits.
+- Known issues / follow-ups: Sparse search works independently. Next step is combining it with dense retrieval using RRF.
+- Next iteration: B4 (Phase B) — Dense retrieval + RRF fusion
