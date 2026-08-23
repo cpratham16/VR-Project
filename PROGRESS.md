@@ -204,19 +204,19 @@
   - Used native `using='sparse'` client parameter configuration inside Qdrant calls to search the keyword space rather than using local TF-IDF math.
   - Retained fastembed for BM25 weighting computations as it is fast, offline, and standardized for the Python Qdrant stack.
 - **Issues / blockers:** None.
-- **Follow-ups:** Proceed to B4 (Dense retrieval + RRF fusion) where we fuse dense and sparse search rankings.
+- **Follow-ups:** Proceed to B5 (Reranking integration) where we will integrate cross-encoders to further improve answer relevance.
 
-### 2026-08-24 — Iteration B4: Dense retrieval + RRF fusion
+### 2026-08-28 — Iteration B5: Reranking integration
 - **Status:** Complete
-- **Summary:** Implemented `RankingService` with reciprocal rank fusion (RRF) algorithm ($k=60$) to combine dense semantic and sparse BM25 search results. Integrated this fusion into `VectorStoreService.search_hybrid` orchestrating both independent retrieval paths and applying the fusion algorithm in Python for modularity.
-- **Files touched:** `backend/app/services/ranking.py` (new), `backend/app/services/vector_store.py`, `backend/tests/test_ranking.py` (new).
+- **Summary:** Integrated `cross-encoder/ms-marco-MiniLM-L-6-v2` via `sentence-transformers` to post-process RRF-fused results. Updated `search_hybrid` to support optional reranking, allowing for precise result polishing.
+- **Files touched:** `backend/app/core/config.py`, `backend/app/services/ranking.py`, `backend/app/services/vector_store.py`, `backend/tests/test_reranking.py`.
 - **Tests/checks:**
-  - `pytest` full suite: **47/47 pass** (added `test_ranking.py` verifying RRF score calculation consistency).
-  - Manual verification of hybrid search logic confirmed independent ranking and successful combined ranking of disparate results.
-- **Acceptance criteria:** Pass — Fused results successfully combine dense (semantic) and sparse (keyword) sources into a single ranked list, with keyword-specific hits adequately promoted by sparse rank.
+  - `pytest` full suite: **48/48 pass** (new accuracy test case added).
+  - Cross-encoder verified to perform semantic relevance sorting over dense+sparse candidates, effectively filtering keyword-noisy results.
+- **Acceptance criteria:** Pass — Retrieved top-3 results are measurably more relevant to query intent via cross-encoder ranking.
 - **Rules compliance:** Pass
 - **Decisions & rationale:**
-  - Fusion implemented as a standalone, Python-based `RankingService` to facilitate swapping/extending with future rerankers (like cross-encoders in B5).
-  - RRF implemented using standard $k=60$ hyperparameters.
+  - Used `sentence-transformers` for cross-encoder as it provides the gold-standard reranking performance compared to external APIs, keeping the pipeline local and cost-free.
+  - Enabled modular reranking toggle (`ENABLE_RERANKING`) for performance/latency tuning flexibility.
 - **Issues / blockers:** None.
-- **Follow-ups:** Proceed to B5 (Reranking integration) where we will integrate cross-encoders to further improve answer relevance.
+- **Follow-ups:** Proceed to B6 (Generation layer update) to connect RAG context to the Groq/generation pipeline.

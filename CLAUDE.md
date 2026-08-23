@@ -1,13 +1,13 @@
 ## Current Status
 - Active phase: B
-- Last completed iteration: B4 — Dense retrieval + RRF fusion
+- Last completed iteration: B5 — Reranking integration
 - Status: Complete
-- What changed: Implemented `RankingService` to fuse dense semantic and sparse BM25 results using Reciprocal Rank Fusion (RRF). Added `search_hybrid` method to `VectorStoreService` for integrated retrieval.
-- New/modified modules: `backend/app/services/ranking.py` (new), `backend/app/services/vector_store.py`, `backend/tests/test_ranking.py` (new).
+- What changed: Integrated a Cross-Encoder reranker (`cross-encoder/ms-marco-MiniLM-L-6-v2`) to polish top-K results from the RRF-fused retrieval pipeline. Updated `search_hybrid` to toggle reranking at runtime.
+- New/modified modules: `backend/app/core/config.py`, `backend/app/services/ranking.py`, `backend/app/services/vector_store.py`, `tests/test_reranking.py`.
 - Key decisions made:
-  - Fusion implemented as a standalone, Python-based `RankingService` to facilitate swapping/extending with future rerankers (like cross-encoders in B5).
-  - RRF implemented using standard $k=60$ hyperparameters in Python.
-- Dependencies added: None.
-- Verification performed: pytest full suite 47/47 passing (added `test_ranking.py` validating RRF computation fidelity).
-- Known issues / follow-ups: None.
-- Next iteration: B5 (Phase B) — Reranking integration
+  - Added `ENABLE_RERANKING` toggle to allow high-speed RRF-only retrieval when latency constraints are tight.
+  - Used standard `sentence-transformers` CrossEncoder implementation for local high-accuracy reranking.
+- Dependencies added: `sentence-transformers==6.0.0`.
+- Verification performed: pytest full suite 48/48 pass (added reranker accuracy test confirming precise demotion of keyword-noisy results). Confirmed model download + inference functionality.
+- Known issues / follow-ups: Reranking is compute-heavy; future B6 LLM integration should pass top-K-reranked results to avoid LLM context-window waste.
+- Next iteration: B6 (Phase B) — Generation layer update
