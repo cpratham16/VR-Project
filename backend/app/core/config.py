@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     EMBEDDING_DIMENSION: int = os.getenv("EMBEDDING_DIMENSION", 768)
     CHUNK_SIZE_CHARS: int = os.getenv("CHUNK_SIZE_CHARS", 1000)
     CHUNK_OVERLAP_CHARS: int = os.getenv("CHUNK_OVERLAP_CHARS", 100)
+    ENABLE_RERANKING: bool = os.getenv("ENABLE_RERANKING", "true").lower() == "true"
+    RERANKER_MODEL: str = os.getenv("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
 
     SECRET_KEY: str = os.getenv("SECRET_KEY", DEFAULT_SECRET_KEY)
     ALGORITHM: str = "HS256"

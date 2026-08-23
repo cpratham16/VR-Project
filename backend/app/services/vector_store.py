@@ -291,14 +291,18 @@ class VectorStoreService:
         
         return [hit.payload for hit in hits.points if hit.payload]
 
-    def search_hybrid(self, query: str, limit: int = 5, filter_kwargs: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
-        """Hybrid search combining dense and sparse results via RRF."""
+    def search_hybrid(self, query: str, limit: int = 5, filter_kwargs: Optional[Dict[str, str]] = None, rerank: bool = settings.ENABLE_RERANKING) -> List[Dict[str, Any]]:
+        """Hybrid search combining dense and sparse results via RRF, optionally reranked."""
         dense_results = self.search(query, limit=20, filter_kwargs=filter_kwargs)
         sparse_results = self.sparse_search(query, limit=20, filter_kwargs=filter_kwargs)
         
-        return ranking_service.reciprocal_rank_fusion(
-            dense_results, sparse_results, limit=limit
+        fused = ranking_service.reciprocal_rank_fusion(
+            dense_results, sparse_results, limit=20
         )
+        
+        if rerank:
+            return ranking_service.rerank(query, fused, top_k=limit)
+        return fused[:limit]
 
     def get_document(self, doc_id: str) -> Dict[str, Any]:
         """Retrieve all chunks belonging to a document by its source ID."""
