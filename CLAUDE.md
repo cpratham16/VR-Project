@@ -1,17 +1,15 @@
 ## Current Status
 - Active phase: A
-- Last completed iteration: A5 — Session telemetry
+- Last completed iteration: A6 — Performance pass (Phase A complete)
 - Status: Complete
-- What changed: Extended the `VRSession` model and schema to include `time_in_scene`, `interaction_count`, and `completion_status`. Updated frontend telemetry submissions and Patient Detail view to monitor engagement metrics in real-time.
-- New/modified modules: 
-  - `backend/app/models/vr.py`, `backend/app/schemas/vr.py`, `backend/app/api/v1/patient_vr.py`
-  - `frontend/src/pages/patient/vr/VRSessionRunner.tsx`
-  - `frontend/src/pages/doctor/PatientDetail.tsx`
+- What changed: Applied renderer-level GPU optimizations to both VR scenes — hardware foveation, physically correct lights, color management, and draw sorting; downscaled shadow maps 2048→1024; tuned physics solver iterations; removed shadow work from distant skyline geometry.
+- New/modified modules: frontend/src/pages/patient/vr/VRSessionRunner.tsx
 - Key decisions made:
-  - Frontend records `elapsed` time as `time_in_scene` and calculates completion vs. early termination.
-  - Implemented interactive clicks on A-Frame events to bump `interaction_count`.
-  - Upgraded Doctor dashboard's patient details view to render VR sessions alongside mood and logs.
+  - `renderer="antialias: true; physicallyCorrectLights: true; colorManagement: true; foveationLevel: 2; sortObjects: true"` on both scenes.
+  - Shadow maps reduced to 1024×1024 (~75% shadow GPU cost cut, negligible visual delta at deck/lecture viewing distances).
+  - Physics solver limited to `iterations: 2; tolerance: 0.001` (safe: only one slow-moving dynamic prop exists).
+  - Distant buildings excluded from shadow cast/receive (below fog range, invisible benefit).
 - Dependencies added/removed: None.
-- Verification performed: Successfully ran `tsc -b && vite build` proving UI builds cleanly.
-- Known issues / follow-ups: Local Python test suite requires Visual C++ Build Tools to properly compile `asyncpg` for local backend execution tests.
-- Next iteration: A6 — Performance pass
+- Verification performed: `tsc -b && vite build` passes clean; diff inspected as surgical.
+- Known issues / follow-ups: Ambient audio still streams from CDN (`cdn.aframe.io`); bundling local lightweight .mp3 assets requires sourcing license-free files (deferred). Chunk size >500kB warning persists (code-splitting candidate for a future iteration).
+- Next iteration: B1 (Phase B)

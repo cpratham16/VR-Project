@@ -19,3 +19,5 @@
 - **Query 16**: "discuss A5 in detail"
 - **Query 17**: "yes implement it"
 - **Query 18**: "but why did you write the progress in history.md file write it in PROGRESS.md file"
+- **Query 19**: "okay lets discuss the next iteration in detail"
+- **Query 20**: "okay implement this"

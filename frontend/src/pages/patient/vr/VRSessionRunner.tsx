@@ -56,21 +56,22 @@ function buildHeightsScene(intensity: 'low' | 'medium' | 'high') {
     const color = isGlass ? '#2c3e50' : i % 3 === 1 ? '#34495e' : '#1a252f';
     const metalness = isGlass ? '0.75' : '0.15';
     const roughness = isGlass ? '0.15' : '0.85';
-    buildings += `<a-box position="${x.toFixed(1)} ${y.toFixed(1)} ${z.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" depth="${w.toFixed(1)}" material="color: ${color}; metalness: ${metalness}; roughness: ${roughness}" shadow="cast: true; receive: true"></a-box>`;
+    // Distant buildings sit far below the deck inside fog range: skip shadow work for GPU savings
+    buildings += `<a-box position="${x.toFixed(1)} ${y.toFixed(1)} ${z.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" depth="${w.toFixed(1)}" material="color: ${color}; metalness: ${metalness}; roughness: ${roughness}"></a-box>`;
   }
 
   return `
-    <a-scene physics="debug: false" fog="type: linear; color: #b0c4de; near: 15; far: ${height + 130}" shadow="type: pcfsoft">
+    <a-scene physics="debug: false; iterations: 2; tolerance: 0.001" renderer="antialias: true; physicallyCorrectLights: true; colorManagement: true; foveationLevel: 2; sortObjects: true" fog="type: linear; color: #b0c4de; near: 15; far: ${height + 130}" shadow="type: pcfsoft">
       <a-sky color="#6ba4b8"></a-sky>
       <a-entity light="type: ambient; intensity: 0.55; color: #e0f2fe"></a-entity>
-      <a-entity light="type: directional; intensity: 1.1; color: #fffbeb; castShadow: true; shadowMapWidth: 2048; shadowMapHeight: 2048; shadowCameraFar: 140; shadowCameraTop: 70; shadowCameraRight: 70; shadowCameraBottom: -70; shadowCameraLeft: -70; position: 15 45 20"></a-entity>
+      <a-entity light="type: directional; intensity: 1.1; color: #fffbeb; castShadow: true; shadowMapWidth: 1024; shadowMapHeight: 1024; shadowCameraFar: 140; shadowCameraTop: 70; shadowCameraRight: 70; shadowCameraBottom: -70; shadowCameraLeft: -70; position: 15 45 20"></a-entity>
       <a-entity light="type: hemisphere; color: #87ceeb; groundColor: #334155; intensity: 0.4"></a-entity>
       
       <!-- Wind Ambience -->
       <a-sound src="https://cdn.aframe.io/sounds/wind.mp3" autoplay="true" loop="true" volume="0.2" positional="false"></a-sound>
 
       <a-plane static-body position="0 -${height} 0" rotation="-90 0 0" width="220" height="220" material="color: #475569; metalness: 0.2; roughness: 0.9" shadow="receive: true"></a-plane>
-      ${buildings}
+      <a-entity id="skyline">${buildings}</a-entity>
 
       <a-entity id="deck" position="0 0 0">
         <a-box static-body position="0 -0.5 0" width="14" height="1" depth="14" material="color: #cbd5e1; metalness: 0.35; roughness: 0.5" shadow="cast: true; receive: true"></a-box>
@@ -128,10 +129,10 @@ function buildLectureScene(intensity: 'low' | 'medium' | 'high') {
   const chatterText = intensity === 'high' ? 'Crowd murmurs softly' : intensity === 'medium' ? 'A few people chatting' : 'Empty hall, quiet';
 
   return `
-    <a-scene physics="debug: false" fog="type: linear; color: #1e293b; near: 12; far: 65" shadow="type: pcfsoft">
+    <a-scene physics="debug: false; iterations: 2; tolerance: 0.001" renderer="antialias: true; physicallyCorrectLights: true; colorManagement: true; foveationLevel: 2; sortObjects: true" fog="type: linear; color: #1e293b; near: 12; far: 65" shadow="type: pcfsoft">
       <a-sky color="#0f172a"></a-sky>
       <a-entity light="type: ambient; intensity: 0.4; color: #cbd5e1"></a-entity>
-      <a-entity light="type: directional; intensity: 0.8; color: #fef08a; castShadow: true; shadowMapWidth: 2048; shadowMapHeight: 2048; shadowCameraFar: 80; position: -4 14 6"></a-entity>
+      <a-entity light="type: directional; intensity: 0.8; color: #fef08a; castShadow: true; shadowMapWidth: 1024; shadowMapHeight: 1024; shadowCameraFar: 80; position: -4 14 6"></a-entity>
       <a-entity light="type: spot; intensity: 1.6; color: #ffffff; angle: 40; penumbra: 0.4; position: 0 7 1; target: #podium" shadow="cast: true"></a-entity>
 
       <a-box static-body position="0 -0.5 -4" width="32" height="1" depth="26" material="color: #334155; roughness: 0.8; metalness: 0.15" shadow="receive: true"></a-box>

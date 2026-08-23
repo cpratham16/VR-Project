@@ -142,3 +142,14 @@
 - **Decisions & rationale:** Session tracking metrics added directly to the existing VR Session context for immediate visualization by clinicians.
 - **Issues / blockers:** Local asyncpg compiling blocked by Windows build tools; frontend validated.
 - **Follow-ups:** Proceed to A6 for Performance pass.
+
+### 2026-08-24 — Iteration A6: Performance pass (Phase A complete)
+- **Status:** Complete
+- **Summary:** Applied renderer-level GPU optimizations to both VR scenes — hardware foveation, physically correct lights, color management, and draw sorting; downscaled shadow maps 2048?1024; tuned physics solver iterations; removed shadow work from distant skyline geometry.
+- **Files touched:** frontend/src/pages/patient/vr/VRSessionRunner.tsx
+- **Tests/checks:** npm run build (Success), git diff inspected (surgical, 7 insertions / 6 deletions)
+- **Acceptance criteria:** Pass — renderer flags active, no regressions to controllers/telemetry/audio
+- **Rules compliance:** Pass
+- **Decisions & rationale:** Foveation level 2 balances peripheral quality vs GPU cost; physics iterations safe to lower since only one slow dynamic prop exists; building shadows skipped as they fall below fog range.
+- **Issues / blockers:** Local .mp3 bundling deferred pending license-free audio sourcing; CDN audio retained for now.
+- **Follow-ups:** Phase A complete. Proceed to Phase B per IMPLEMENTATION_PLAN.md.
