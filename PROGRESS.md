@@ -205,3 +205,18 @@
   - Retained fastembed for BM25 weighting computations as it is fast, offline, and standardized for the Python Qdrant stack.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to B4 (Dense retrieval + RRF fusion) where we fuse dense and sparse search rankings.
+
+### 2026-08-24 — Iteration B4: Dense retrieval + RRF fusion
+- **Status:** Complete
+- **Summary:** Implemented `RankingService` with reciprocal rank fusion (RRF) algorithm ($k=60$) to combine dense semantic and sparse BM25 search results. Integrated this fusion into `VectorStoreService.search_hybrid` orchestrating both independent retrieval paths and applying the fusion algorithm in Python for modularity.
+- **Files touched:** `backend/app/services/ranking.py` (new), `backend/app/services/vector_store.py`, `backend/tests/test_ranking.py` (new).
+- **Tests/checks:**
+  - `pytest` full suite: **47/47 pass** (added `test_ranking.py` verifying RRF score calculation consistency).
+  - Manual verification of hybrid search logic confirmed independent ranking and successful combined ranking of disparate results.
+- **Acceptance criteria:** Pass — Fused results successfully combine dense (semantic) and sparse (keyword) sources into a single ranked list, with keyword-specific hits adequately promoted by sparse rank.
+- **Rules compliance:** Pass
+- **Decisions & rationale:**
+  - Fusion implemented as a standalone, Python-based `RankingService` to facilitate swapping/extending with future rerankers (like cross-encoders in B5).
+  - RRF implemented using standard $k=60$ hyperparameters.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to B5 (Reranking integration) where we will integrate cross-encoders to further improve answer relevance.
