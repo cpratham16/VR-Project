@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     GEMINI_EMBEDDING_MODEL: str = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
     FASTEMBED_MODEL: str = os.getenv("FASTEMBED_MODEL", "nomic-ai/nomic-embed-text-v1.5")
+    FASTEMBED_SPARSE_MODEL: str = os.getenv("FASTEMBED_SPARSE_MODEL", "Qdrant/bm25")
     EMBEDDING_DIMENSION: int = os.getenv("EMBEDDING_DIMENSION", 768)
     CHUNK_SIZE_CHARS: int = os.getenv("CHUNK_SIZE_CHARS", 1000)
     CHUNK_OVERLAP_CHARS: int = os.getenv("CHUNK_OVERLAP_CHARS", 100)

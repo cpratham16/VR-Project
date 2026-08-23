@@ -84,6 +84,24 @@ class FastEmbedProvider(EmbeddingProvider):
         return [v.tolist() for v in self._model.embed(list(texts))]
 
 
+class SparseEmbeddingProvider:
+    """Provides sparse embeddings (BM25) via fastembed."""
+    
+    def __init__(self, model_name: str) -> None:
+        from fastembed import SparseTextEmbedding
+        self._model = SparseTextEmbedding(model_name=model_name)
+        
+    def embed(self, texts: List[str]):
+        """Returns a list of dicts with 'indices' and 'values'."""
+        sparse_vectors = []
+        for emb in self._model.embed(list(texts)):
+            sparse_vectors.append({
+                "indices": emb.indices.tolist(),
+                "values": emb.values.tolist()
+            })
+        return sparse_vectors
+
+
 def _build_provider() -> EmbeddingProvider:
     provider = settings.EMBEDDING_PROVIDER
     if provider == "gemini" and not settings.GEMINI_API_KEY:
@@ -108,17 +126,28 @@ def get_provider() -> EmbeddingProvider:
         provider_cache = _build_provider()
     return provider_cache
 
+sparse_provider_cache: Optional[SparseEmbeddingProvider] = None
+
+def get_sparse_provider() -> SparseEmbeddingProvider:
+    global sparse_provider_cache
+    if sparse_provider_cache is None:
+        sparse_provider_cache = SparseEmbeddingProvider(model_name=settings.FASTEMBED_SPARSE_MODEL)
+    return sparse_provider_cache
 
 def reset_provider() -> None:
-    global provider_cache
+    global provider_cache, sparse_provider_cache
     provider_cache = None
-
+    sparse_provider_cache = None
 
 def embed_documents(texts: List[str]) -> List[List[float]]:
     if not texts:
         return []
     return get_provider().embed(texts)
 
+def embed_sparse_documents(texts: List[str]):
+    if not texts:
+        return []
+    return get_sparse_provider().embed(texts)
 
 def embed_documents_async(texts: List[str]):
     """Async wrapper around embed_documents so service callers can await it."""

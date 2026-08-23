@@ -93,3 +93,21 @@ def test_embed_dimension_is_configured():
     vectors = provider.embed(["hello world"])
     assert len(vectors) == 1
     assert len(vectors[0]) == settings.EMBEDDING_DIMENSION
+
+
+def test_sparse_search_keyword_precision(vector_store_factory):
+    store = vector_store_factory()
+    store.upsert_document(doc_id="doc-telemanas", text="For emergency helpline support in India, call Tele-MANAS at 14416.")
+    store.upsert_document(doc_id="doc-other", text="General advice on stress and anxiety.")
+    
+    assert store.count() == 2
+    
+    # Verify semantic (dense) search works
+    dense_results = store.search("anxiety help")
+    assert len(dense_results) >= 1
+    
+    # Verify keyword (sparse) search works and precisely matches distinctive term
+    sparse_results = store.sparse_search("14416")
+    assert len(sparse_results) >= 1
+    assert sparse_results[0]["doc_id"] == "doc-telemanas"
+    assert "Tele-MANAS" in sparse_results[0]["text"]

@@ -7,7 +7,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models as qdrant_models
 
 from app.core.config import settings
-from app.services.embeddings import embed_documents
+from app.services.embeddings import embed_documents, embed_sparse_documents
 
 logger = logging.getLogger("app.services.vector_store")
 
@@ -102,10 +102,15 @@ class VectorStoreService:
         if not self._collection_exists():
             self._client.create_collection(
                 collection_name=self.collection_name,
-                vectors_config=qdrant_models.VectorParams(
-                    size=self.dimension,
-                    distance=qdrant_models.Distance.COSINE,
-                ),
+                vectors_config={
+                    "dense": qdrant_models.VectorParams(
+                        size=self.dimension,
+                        distance=qdrant_models.Distance.COSINE,
+                    )
+                },
+                sparse_vectors_config={
+                    "sparse": qdrant_models.SparseVectorParams()
+                }
             )
             for field in ("doc_id", "kind", "category", "status"):
                 self._client.create_payload_index(
@@ -134,17 +139,24 @@ class VectorStoreService:
         if not chunks:
             return 0
         vectors = embed_documents(chunks)
-        if len(vectors) != len(chunks):
+        sparse_vectors = embed_sparse_documents(chunks)
+        if len(vectors) != len(chunks) or len(sparse_vectors) != len(chunks):
             raise ValueError("Embedding count does not match chunk count")
 
         self.ensure_collection()
         points = []
-        for index, (chunk, vector) in enumerate(zip(chunks, vectors)):
+        for index, (chunk, vector, sparse_vec) in enumerate(zip(chunks, vectors, sparse_vectors)):
             point_id = str(uuid.uuid5(_DOC_UUID_NS, f"{doc_id}:{index}"))
             points.append(
                 qdrant_models.PointStruct(
                     id=point_id,
-                    vector=vector,
+                    vector={
+                        "dense": vector,
+                        "sparse": qdrant_models.SparseVector(
+                            indices=sparse_vec["indices"],
+                            values=sparse_vec["values"]
+                        )
+                    },
                     payload={
                         "doc_id": doc_id,
                         "kind": kind,
@@ -198,14 +210,21 @@ class VectorStoreService:
             return 0
             
         vectors = embed_documents(all_chunks)
+        sparse_vectors = embed_sparse_documents(all_chunks)
         points = []
         
-        for meta, vector in zip(all_metadata, vectors):
+        for meta, vector, sparse_vec in zip(all_metadata, vectors, sparse_vectors):
             point_id = str(uuid.uuid5(_DOC_UUID_NS, f"{meta['doc_id']}:{meta['chunk_index']}"))
             points.append(
                 qdrant_models.PointStruct(
                     id=point_id,
-                    vector=vector,
+                    vector={
+                        "dense": vector,
+                        "sparse": qdrant_models.SparseVector(
+                            indices=sparse_vec["indices"],
+                            values=sparse_vec["values"]
+                        )
+                    },
                     payload=meta
                 )
             )
@@ -234,6 +253,36 @@ class VectorStoreService:
         hits = self._client.query_points(
             collection_name=self.collection_name,
             query=query_vector,
+            using="dense",
+            limit=limit,
+            query_filter=q_filter,
+            with_payload=True,
+        )
+        
+        return [hit.payload for hit in hits.points if hit.payload]
+
+    def sparse_search(self, query: str, limit: int = 5, filter_kwargs: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
+        """Sparse BM25 search returning ranked payload dicts."""
+        if not query.strip() or not self._collection_exists():
+            return []
+            
+        sparse_vec = embed_sparse_documents([query])[0]
+        
+        q_filter = None
+        if filter_kwargs:
+            conditions = [
+                qdrant_models.FieldCondition(key=k, match=qdrant_models.MatchValue(value=v))
+                for k, v in filter_kwargs.items()
+            ]
+            q_filter = qdrant_models.Filter(must=conditions)
+            
+        hits = self._client.query_points(
+            collection_name=self.collection_name,
+            query=qdrant_models.SparseVector(
+                indices=sparse_vec["indices"],
+                values=sparse_vec["values"]
+            ),
+            using="sparse",
             limit=limit,
             query_filter=q_filter,
             with_payload=True,
