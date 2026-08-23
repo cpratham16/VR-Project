@@ -37,6 +37,9 @@ class VRSessionResponse(BaseModel):
     suds_pre: Optional[int] = None
     suds_post: Optional[int] = None
     patient_feedback: Optional[str] = None
+    time_in_scene: Optional[float] = None
+    interaction_count: Optional[int] = 0
+    completion_status: Optional[str] = None
     assigned_at: datetime
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
@@ -64,6 +67,9 @@ class VRCompletionCreate(BaseModel):
     suds_pre: int = Field(ge=1, le=10)
     suds_post: int = Field(ge=1, le=10)
     patient_feedback: Optional[str] = Field(default="", max_length=2000)
+    time_in_scene: Optional[float] = None
+    interaction_count: Optional[int] = 0
+    completion_status: Optional[str] = "completed_fully"
 
 class VRAssignmentCancel(BaseModel):
     reason: Optional[str] = Field(default="", max_length=500)

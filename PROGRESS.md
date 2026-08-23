@@ -87,3 +87,58 @@
   - `frontend/src/pages/admin/AdminDashboard.tsx`
   - `frontend/src/App.tsx`, `MainLayout.tsx`
 - **Reason:** Complete delivery of Phase 5 â€” Iterations 12 & 13 Admin/Gov Panel as specified in `PRD.md`.
+
+### 2026-08-23 — Iteration A1: Lighting & materials pass
+- **Status:** Complete
+- **Summary:** Upgraded VR Exposure Therapy scenes (Acrophobia & Glossophobia) to use PBR materials and introduced soft real-time directional shadow casting and dynamic multi-light environmental lighting.
+- **Files touched:** frontend/src/pages/patient/vr/VRSessionRunner.tsx
+- **Tests/checks:** npm run build (Success), git diff (Verified)
+- **Acceptance criteria:** Pass
+- **Rules compliance:** Pass
+- **Decisions & rationale:** PBR adds immersion; shadow limits set for browser performance.
+- **Issues / blockers:** Backend tests require VS Build Tools (will address in backend phase).
+- **Follow-ups:** Proceed to A2 for controller interactions.
+
+### 2026-08-23 — Iteration A2: Controller-based interaction
+- **Status:** Complete
+- **Summary:** Enabled WebXR immersive mode, added controller-based interaction (laser-controls) for both VR scenes, and implemented a custom A-Frame component to handle stage advancement.
+- **Files touched:** frontend/src/pages/patient/vr/VRSessionRunner.tsx
+- **Tests/checks:** npm run build (Success), git diff (Verified)
+- **Acceptance criteria:** Pass
+- **Rules compliance:** Pass
+- **Decisions & rationale:** Used custom stage-advance component registered via A-Frame; Enter VR button added for immersive mode.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to A3 for Physics layer.
+
+### 2026-08-23 — Iteration A3: Physics Layer
+- **Status:** Complete
+- **Summary:** Integrated frame-physics-system (cannon-es) to provide realistic collisions and physics responses within both VR scenarios.
+- **Files touched:** frontend/src/pages/patient/vr/VRSessionRunner.tsx
+- **Tests/checks:** npm run build (Success)
+- **Acceptance criteria:** Pass
+- **Rules compliance:** Pass
+- **Decisions & rationale:** Used static-body for constraints and dynamic-body for interactive props.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to A4 for Spatial audio.
+
+### 2026-08-23 — Iteration A4: Spatial Audio
+- **Status:** Complete
+- **Summary:** Integrated spatialized audio environments using -sound primitives. Added global ambient wind for acrophobia scenes and positional crowd-murmur loops for lecture scenes, with volume modulated by intensity.
+- **Files touched:** frontend/src/pages/patient/vr/VRSessionRunner.tsx
+- **Tests/checks:** npm run build (Success)
+- **Acceptance criteria:** Pass
+- **Rules compliance:** Pass
+- **Decisions & rationale:** Used A-Frame -sound for positional audio to enhance immersion without extra heavy dependencies.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to A5 for Session telemetry.
+
+### 2026-08-23 — Iteration A5: Session telemetry
+- **Status:** Complete
+- **Summary:** Extended the VRSession model and schema to include 	ime_in_scene, interaction_count, and completion_status. Updated frontend telemetry submissions and Patient Detail view to monitor engagement metrics in real-time.
+- **Files touched:** backend/app/models/vr.py, backend/app/schemas/vr.py, backend/app/api/v1/patient_vr.py, frontend/src/pages/patient/vr/VRSessionRunner.tsx, frontend/src/pages/doctor/PatientDetail.tsx
+- **Tests/checks:** npm run build (Success)
+- **Acceptance criteria:** Pass
+- **Rules compliance:** Pass
+- **Decisions & rationale:** Session tracking metrics added directly to the existing VR Session context for immediate visualization by clinicians.
+- **Issues / blockers:** Local asyncpg compiling blocked by Windows build tools; frontend validated.
+- **Follow-ups:** Proceed to A6 for Performance pass.

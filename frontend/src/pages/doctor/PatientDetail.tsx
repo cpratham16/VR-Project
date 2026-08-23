@@ -53,11 +53,18 @@ export default function DoctorPatientDetail() {
   const [error, setError] = useState('');
   const [newNote, setNewNote] = useState('');
   const [savingNote, setSavingNote] = useState(false);
-  const [activeTab, setActiveTab] = useState<'notes' | 'screenings' | 'mood'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'screenings' | 'mood' | 'vr'>('notes');
+  const [vrSessions, setVrSessions] = useState<any[]>([]);
 
   useEffect(() => {
     if (patientId) fetchDetail();
   }, [patientId]);
+
+  useEffect(() => {
+    if (activeTab === 'vr') {
+      apiClient.get(`/doctor/vr/sessions?patient_id=${patientId}`).then(res => setVrSessions(res.data)).catch(console.error);
+    }
+  }, [activeTab, patientId]);
 
   const fetchDetail = async () => {
     setLoading(true);
@@ -157,6 +164,14 @@ export default function DoctorPatientDetail() {
             }`}
           >
             Mood Logs ({patient.mood_entries.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('vr')}
+            className={`px-3 py-1.5 text-xs font-medium rounded transition ${
+              activeTab === 'vr' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            VR Sessions
           </button>
         </div>
       </div>
@@ -292,6 +307,24 @@ export default function DoctorPatientDetail() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Tab: VR Sessions */}
+      {activeTab === 'vr' && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
+          <h3 className="text-lg font-semibold text-gray-800">VR Therapy Sessions</h3>
+          {vrSessions.length === 0 ? <p className="text-sm text-gray-400">No VR sessions assigned.</p> : (
+            <div className="space-y-3">
+              {vrSessions.map(vs => (
+                <div key={vs.id} className="p-4 border rounded-lg border-gray-100 bg-gray-50 text-sm">
+                  <div className="font-bold">{vs.scenario_name} ({vs.intensity_level})</div>
+                  <div>Status: {vs.status}</div>
+                  {vs.time_in_scene != null && (<div>Engagement: {vs.time_in_scene.toFixed(0)}s, {vs.interaction_count} interactions</div>)}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

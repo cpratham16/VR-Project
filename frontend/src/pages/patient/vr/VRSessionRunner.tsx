@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import 'aframe';
+import 'aframe-physics-system';
 import { apiClient } from '../../../api/client';
 import { useHeartRateMonitor } from '../../../components/HeartRateMonitor';
 
@@ -51,32 +52,48 @@ function buildHeightsScene(intensity: 'low' | 'medium' | 'high') {
     const w = 2 + rand() * 3;
     const h = 8 + rand() * 22;
     const y = -height - h / 2;
-    buildings += `<a-box position="${x.toFixed(1)} ${y.toFixed(1)} ${z.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" depth="${w.toFixed(1)}" material="color: ${i % 3 === 0 ? '#3b4b63' : i % 3 === 1 ? '#4a5568' : '#2d3748'}; roughness: 1"></a-box>`;
+    const isGlass = i % 3 === 0;
+    const color = isGlass ? '#2c3e50' : i % 3 === 1 ? '#34495e' : '#1a252f';
+    const metalness = isGlass ? '0.75' : '0.15';
+    const roughness = isGlass ? '0.15' : '0.85';
+    buildings += `<a-box position="${x.toFixed(1)} ${y.toFixed(1)} ${z.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" depth="${w.toFixed(1)}" material="color: ${color}; metalness: ${metalness}; roughness: ${roughness}" shadow="cast: true; receive: true"></a-box>`;
   }
 
   return `
-    <a-scene fog="type: linear; color: #bfd7ee; near: 20; far: ${height + 120}">
-      <a-sky color="#87CEEB"></a-sky>
-      <a-entity light="type: ambient; intensity: 0.6"></a-entity>
-      <a-entity light="type: directional; intensity: 0.9; position: 5 20 5"></a-entity>
+    <a-scene physics="debug: false" fog="type: linear; color: #b0c4de; near: 15; far: ${height + 130}" shadow="type: pcfsoft">
+      <a-sky color="#6ba4b8"></a-sky>
+      <a-entity light="type: ambient; intensity: 0.55; color: #e0f2fe"></a-entity>
+      <a-entity light="type: directional; intensity: 1.1; color: #fffbeb; castShadow: true; shadowMapWidth: 2048; shadowMapHeight: 2048; shadowCameraFar: 140; shadowCameraTop: 70; shadowCameraRight: 70; shadowCameraBottom: -70; shadowCameraLeft: -70; position: 15 45 20"></a-entity>
+      <a-entity light="type: hemisphere; color: #87ceeb; groundColor: #334155; intensity: 0.4"></a-entity>
+      
+      <!-- Wind Ambience -->
+      <a-sound src="https://cdn.aframe.io/sounds/wind.mp3" autoplay="true" loop="true" volume="0.2" positional="false"></a-sound>
 
-      <a-plane position="0 -${height} 0" rotation="-90 0 0" width="200" height="200" material="color:#7aa2b8; roughness:1"></a-plane>
+      <a-plane static-body position="0 -${height} 0" rotation="-90 0 0" width="220" height="220" material="color: #475569; metalness: 0.2; roughness: 0.9" shadow="receive: true"></a-plane>
       ${buildings}
 
       <a-entity id="deck" position="0 0 0">
-        <a-box position="0 -0.5 0" width="14" height="1" depth="14" material="color:#e5e7eb; metalness:0.3"></a-box>
-        <a-plane position="0 0.01 0" rotation="-90 0 0" width="14" height="14" material="color:#ffffff; opacity:0.15; transparent:true"></a-plane>
-        <a-box position="-6.5 1 0" width="0.3" height="2.5" depth="14" material="color:#1f2937"></a-box>
-        <a-box position="6.5 1 0" width="0.3" height="2.5" depth="14" material="color:#1f2937"></a-box>
-        <a-box position="0 1 6.5" width="13" height="2.5" depth="0.3" material="color:#1f2937"></a-box>
-        <a-box position="0 1 -6.5" width="13" height="2.5" depth="0.3" material="color:#1f2937"></a-box>
-        <a-box position="0 2.4 0" width="14" height="0.2" depth="14" material="color:#374151"></a-box>
+        <a-box static-body position="0 -0.5 0" width="14" height="1" depth="14" material="color: #cbd5e1; metalness: 0.35; roughness: 0.5" shadow="cast: true; receive: true"></a-box>
+        <a-plane position="0 0.01 0" rotation="-90 0 0" width="14" height="14" material="color: #ffffff; opacity: 0.2; transparent: true; metalness: 0.8; roughness: 0.1"></a-plane>
+        <a-box static-body position="-6.5 1 0" width="0.3" height="2.5" depth="14" material="color: #0f172a; metalness: 0.9; roughness: 0.2" shadow="cast: true; receive: true"></a-box>
+        <a-box static-body position="6.5 1 0" width="0.3" height="2.5" depth="14" material="color: #0f172a; metalness: 0.9; roughness: 0.2" shadow="cast: true; receive: true"></a-box>
+        <a-box static-body position="0 1 6.5" width="13" height="2.5" depth="0.3" material="color: #0f172a; metalness: 0.9; roughness: 0.2" shadow="cast: true; receive: true"></a-box>
+        <a-box static-body position="0 1 -6.5" width="13" height="2.5" depth="0.3" material="color: #0f172a; metalness: 0.9; roughness: 0.2" shadow="cast: true; receive: true"></a-box>
+        <a-box static-body position="0 2.4 0" width="14" height="0.2" depth="14" material="color: #1e293b; metalness: 0.95; roughness: 0.1" shadow="cast: true; receive: true"></a-box>
       </a-entity>
 
       <a-entity id="sway-rig" animation="property: rotation; to: 0 0 0.4 0; dur: 3000; loop: true; dir: alternate; easing: easeInOutQuad">
         <a-entity camera="userHeight: 1.6" look-controls="enabled: true">
-          <a-entity cursor="rayOrigin: mouse" raycaster="far: 100"></a-entity>
+          <a-entity cursor="rayOrigin: mouse" raycaster="far: 100; objects: [stage-advance]" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" material="color: white; shader: flat" position="0 0 -1">
+            <a-animation begin="fusing" easing="ease-in" attribute="scale" fill="backwards" from="1 1 1" to="0.1 0.1 0.1" dur="1500"></a-animation>
+          </a-entity>
         </a-entity>
+        <a-entity laser-controls="hand: right" raycaster="far: 20; objects: [stage-advance]" line="color: #4f46e5; opacity: 0.7"></a-entity>
+        <a-entity laser-controls="hand: left" raycaster="far: 20; objects: [stage-advance]" line="color: #4f46e5; opacity: 0.7"></a-entity>
+      </a-entity>
+
+      <a-entity stage-advance position="0 0.5 -4" geometry="primitive: box; width: 3; height: 0.8; depth: 0.1" material="color: #4f46e5; opacity: 0.85; transparent: true" class="clickable">
+        <a-text value="Advance Stage →" align="center" color="#ffffff" width="4" position="0 0 0.06"></a-text>
       </a-entity>
     </a-scene>
   `;
@@ -96,11 +113,11 @@ function buildLectureScene(intensity: 'low' | 'medium' | 'high') {
     for (let i = 0; i < perRow; i++) {
       const x = (i - (perRow - 1) / 2) * 2.2;
       const headColor = ['#d9b8a0', '#c9a184', '#e5c6a8', '#b98d6e', '#f0d0b5'][Math.floor(rand() * 5)];
-      const bodyColor = ['#2f4858', '#5d6d7e', '#8a5a44', '#3e5f8a', '#7b6b8a'][Math.floor(rand() * 5)];
+      const bodyColor = ['#1e293b', '#334155', '#475569', '#0f172a', '#1e1b4b'][Math.floor(rand() * 5)];
       audience += `
         <a-entity position="${x.toFixed(2)} 0 ${z.toFixed(1)}">
-          <a-box position="0 0.55 0" width="0.7" height="1.1" depth="0.5" material="color:${bodyColor}; roughness:1"></a-box>
-          <a-sphere position="0 1.45 0" radius="0.28" material="color:${headColor}; roughness:0.9"></a-sphere>
+          <a-box position="0 0.55 0" width="0.7" height="1.1" depth="0.5" material="color:${bodyColor}; roughness: 0.85; metalness: 0.05" shadow="cast: true; receive: true"></a-box>
+          <a-sphere position="0 1.45 0" radius="0.28" material="color:${headColor}; roughness: 0.7; metalness: 0.0" shadow="cast: true"></a-sphere>
         </a-entity>`;
       placed++;
     }
@@ -111,31 +128,44 @@ function buildLectureScene(intensity: 'low' | 'medium' | 'high') {
   const chatterText = intensity === 'high' ? 'Crowd murmurs softly' : intensity === 'medium' ? 'A few people chatting' : 'Empty hall, quiet';
 
   return `
-    <a-scene fog="type: linear; color: #2b2f3a; near: 15; far: 60">
-      <a-sky color="#1f2330"></a-sky>
-      <a-entity light="type: ambient; intensity: 0.5"></a-entity>
-      <a-entity light="type: directional; intensity: 0.7; position: -2 8 4"></a-entity>
+    <a-scene physics="debug: false" fog="type: linear; color: #1e293b; near: 12; far: 65" shadow="type: pcfsoft">
+      <a-sky color="#0f172a"></a-sky>
+      <a-entity light="type: ambient; intensity: 0.4; color: #cbd5e1"></a-entity>
+      <a-entity light="type: directional; intensity: 0.8; color: #fef08a; castShadow: true; shadowMapWidth: 2048; shadowMapHeight: 2048; shadowCameraFar: 80; position: -4 14 6"></a-entity>
+      <a-entity light="type: spot; intensity: 1.6; color: #ffffff; angle: 40; penumbra: 0.4; position: 0 7 1; target: #podium" shadow="cast: true"></a-entity>
 
-      <a-box position="0 -0.5 -4" width="30" height="1" depth="24" material="color:#3a3f4b"></a-box>
-      <a-box position="0 3 -12" width="34" height="10" depth="1" material="color:#262a35"></a-box>
+      <a-box static-body position="0 -0.5 -4" width="32" height="1" depth="26" material="color: #334155; roughness: 0.8; metalness: 0.15" shadow="receive: true"></a-box>
+      <a-box static-body position="0 3 -12" width="36" height="12" depth="1" material="color: #1e293b; roughness: 0.95; metalness: 0.05" shadow="receive: true"></a-box>
 
-      <a-entity position="0 0 0">
+      <a-entity id="podium" position="0 0 0">
         <a-entity position="0 0.9 -2.6">
-          <a-box position="0 0 0" width="2.4" height="1.3" depth="1.4" material="color:#6b5b3e; roughness:1"></a-box>
-          <a-box position="0 0.55 0" width="1.6" height="0.12" depth="0.8" material="color:#8a744e"></a-box>
+          <a-box static-body position="0 0 0" width="2.4" height="1.3" depth="1.4" material="color: #451a03; roughness: 0.35; metalness: 0.1" shadow="cast: true; receive: true"></a-box>
+          <a-box static-body position="0 0.55 0" width="1.6" height="0.12" depth="0.8" material="color: #78350f; roughness: 0.25; metalness: 0.2" shadow="cast: true"></a-box>
+          <a-box dynamic-body position="0 1.2 0" width="0.2" height="0.4" depth="0.2" material="color: #ef4444; roughness: 0.2" shadow="cast: true"></a-box>
         </a-entity>
       </a-entity>
 
-      <a-plane position="0 3.2 -10.2" width="9" height="5" material="color:#d8dce6; roughness:0.6"></a-plane>
-      <a-text position="0 4.3 -10.1" value="Welcome" color="#111827" width="8" align="center"></a-text>
-      <a-text position="0 3.5 -10.1" value="${chatterText}" color="#4b5563" width="8" align="center"></a-text>
+      <a-plane position="0 3.2 -10.2" width="9" height="5" material="color: #38bdf8; emissive: #0284c7; emissiveIntensity: 0.25; roughness: 0.3" shadow="receive: true"></a-plane>
+      <a-text position="0 4.3 -10.1" value="Welcome" color="#f8fafc" width="8" align="center"></a-text>
+      <a-text position="0 3.5 -10.1" value="${chatterText}" color="#e2e8f0" width="8" align="center"></a-text>
+
+      <!-- Spatial Audios -->
+      <a-sound id="crowd-murmur" src="https://cdn.aframe.io/sounds/crowd.mp3" autoplay="true" loop="true" volume="${intensity === 'high' ? '0.8' : intensity === 'medium' ? '0.4' : '0.1'}" positional="true" position="0 0 -5"></a-sound>
 
       <a-entity id="audience" scale="${audienceScale} ${audienceScale} ${audienceScale}">
         ${audience}
       </a-entity>
 
       <a-entity camera="userHeight: 1.6" position="0 0 4" look-controls="enabled: true">
-        <a-entity cursor="rayOrigin: mouse" raycaster="far: 100"></a-entity>
+        <a-entity cursor="rayOrigin: mouse" raycaster="far: 100; objects: [stage-advance]" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" material="color: white; shader: flat" position="0 0 -1">
+          <a-animation begin="fusing" easing="ease-in" attribute="scale" fill="backwards" from="1 1 1" to="0.1 0.1 0.1" dur="1500"></a-animation>
+        </a-entity>
+      </a-entity>
+      <a-entity laser-controls="hand: right" raycaster="far: 20; objects: [stage-advance]" line="color: #4f46e5; opacity: 0.7"></a-entity>
+      <a-entity laser-controls="hand: left" raycaster="far: 20; objects: [stage-advance]" line="color: #4f46e5; opacity: 0.7"></a-entity>
+
+      <a-entity stage-advance position="0 1.4 -3" geometry="primitive: box; width: 3; height: 0.7; depth: 0.1" material="color: #4f46e5; opacity: 0.85; transparent: true" class="clickable">
+        <a-text value="Advance Stage →" align="center" color="#ffffff" width="4" position="0 0 0.06"></a-text>
       </a-entity>
     </a-scene>
   `;
@@ -151,6 +181,7 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
   const [phase, setPhase] = useState<RunnerPhase>('intro');
   const [stage, setStage] = useState(1);
   const [elapsed, setElapsed] = useState(0);
+  const [interactionCount, setInteractionCount] = useState(0);
   const [sudsPre, setSudsPre] = useState(5);
   const [sudsPost, setSudsPost] = useState(5);
   const [feedback, setFeedback] = useState('');
@@ -164,7 +195,21 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
 
   const totalSeconds = session.duration_minutes * 60;
 
+  const stageRef = useRef(stage);
+  stageRef.current = stage;
+
   useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).AFRAME && !(window as any).__vr_components_registered) {
+      (window as any).__vr_components_registered = true;
+      (window as any).AFRAME.registerComponent('stage-advance', {
+        init: function () {
+          this.el.addEventListener('click', () => {
+            this.el.sceneEl?.emit('vr-stage-advance');
+          });
+        }
+      });
+    }
+
     if (phase !== 'running') return;
     const sceneEl = sceneRef.current;
     if (sceneEl) {
@@ -172,6 +217,15 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
         session.scenario_slug === 'public_speaking'
           ? buildLectureScene(session.intensity_level)
           : buildHeightsScene(session.intensity_level);
+
+      const aScene = sceneEl.querySelector('a-scene');
+      if (aScene) {
+        const handler = () => {
+          setInteractionCount(prev => prev + 1);
+          setStage((s) => s + 1);
+        };
+        aScene.addEventListener('vr-stage-advance', handler);
+      }
     }
 
     const timer = setInterval(() => {
@@ -209,13 +263,16 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  const handleComplete = async () => {
+  const handleComplete = async (earlyExit: boolean = false) => {
     setSubmitting(true);
     try {
       await apiClient.post(`/patient/vr/sessions/${session.id}/complete`, {
         suds_pre: sudsPre,
         suds_post: sudsPost,
         patient_feedback: feedback,
+        time_in_scene: elapsed,
+        interaction_count: interactionCount,
+        completion_status: earlyExit ? "exited_early" : "completed_fully"
       });
       setExitMessage('Session completed and logged back to your doctor.');
     } catch {
@@ -319,7 +376,17 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
 
           <div className="absolute top-4 right-4 flex flex-col gap-2 pointer-events-auto">
             <button
-              onClick={onExit}
+              onClick={() => {
+                const aScene = sceneRef.current?.querySelector('a-scene') as any;
+                if (aScene?.enterVR) aScene.enterVR();
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-4 py-2 rounded-xl shadow cursor-pointer"
+              aria-label="Enter immersive VR mode"
+            >
+              Enter VR
+            </button>
+            <button
+              onClick={async () => { await handleComplete(true); onExit(); }}
               className="bg-red-600 hover:bg-red-700 text-white font-bold text-sm px-4 py-2 rounded-xl shadow cursor-pointer"
             >
               ⏹ End Session
@@ -329,7 +396,7 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto">
             {stage < session.exposure_steps ? (
               <button
-                onClick={() => setStage((s) => s + 1)}
+                onClick={() => { setInteractionCount(c => c + 1); setStage((s) => s + 1); }}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-2xl shadow-2xl cursor-pointer"
               >
                 Advance to Stage {stage + 1} →
@@ -389,7 +456,7 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
             )}
 
             <button
-              onClick={handleComplete}
+              onClick={() => handleComplete(false)}
               disabled={submitting}
               className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold shadow-lg cursor-pointer"
             >

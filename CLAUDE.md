@@ -1,0 +1,17 @@
+## Current Status
+- Active phase: A
+- Last completed iteration: A5 — Session telemetry
+- Status: Complete
+- What changed: Extended the `VRSession` model and schema to include `time_in_scene`, `interaction_count`, and `completion_status`. Updated frontend telemetry submissions and Patient Detail view to monitor engagement metrics in real-time.
+- New/modified modules: 
+  - `backend/app/models/vr.py`, `backend/app/schemas/vr.py`, `backend/app/api/v1/patient_vr.py`
+  - `frontend/src/pages/patient/vr/VRSessionRunner.tsx`
+  - `frontend/src/pages/doctor/PatientDetail.tsx`
+- Key decisions made:
+  - Frontend records `elapsed` time as `time_in_scene` and calculates completion vs. early termination.
+  - Implemented interactive clicks on A-Frame events to bump `interaction_count`.
+  - Upgraded Doctor dashboard's patient details view to render VR sessions alongside mood and logs.
+- Dependencies added/removed: None.
+- Verification performed: Successfully ran `tsc -b && vite build` proving UI builds cleanly.
+- Known issues / follow-ups: Local Python test suite requires Visual C++ Build Tools to properly compile `asyncpg` for local backend execution tests.
+- Next iteration: A6 — Performance pass

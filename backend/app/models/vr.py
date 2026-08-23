@@ -30,6 +30,9 @@ class VRSession(Base):
     suds_pre = Column(Integer, nullable=True)  # 1-10
     suds_post = Column(Integer, nullable=True)  # 1-10
     patient_feedback = Column(Text, nullable=True)
+    time_in_scene = Column(Float, nullable=True)     # Engagement: time spent running sec
+    interaction_count = Column(Integer, default=0)   # Engagement: clicks/actions
+    completion_status = Column(String, nullable=True)# e.g. "completed_fully", "exited_early"
     assigned_at = Column(DateTime, default=datetime.utcnow)
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)

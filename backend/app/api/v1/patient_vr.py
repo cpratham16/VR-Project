@@ -35,6 +35,9 @@ def _serialize_session(session: VRSession, scenario) -> dict:
         "suds_pre": session.suds_pre,
         "suds_post": session.suds_post,
         "patient_feedback": session.patient_feedback,
+        "time_in_scene": session.time_in_scene,
+        "interaction_count": session.interaction_count,
+        "completion_status": session.completion_status,
         "assigned_at": session.assigned_at,
         "started_at": session.started_at,
         "completed_at": session.completed_at,
@@ -131,6 +134,9 @@ async def complete_vr_session(
     session.suds_pre = complete_in.suds_pre
     session.suds_post = complete_in.suds_post
     session.patient_feedback = complete_in.patient_feedback or ""
+    session.time_in_scene = complete_in.time_in_scene
+    session.interaction_count = complete_in.interaction_count
+    session.completion_status = complete_in.completion_status
     await db.commit()
     await db.refresh(session)
 
