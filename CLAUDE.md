@@ -1,24 +1,23 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: H5 — Fix admin login (role-scoped signup, admin provisioning API, demo data & dashboard redesign)
+- Last completed iteration: I1 — Daily popup reminder, skippable (per-instrument PHQ-9/GAD-7)
 - Status: Complete
 - What changed:
-  - **Root causes fixed (admin login & empty dashboard):** (a) public signup accepted `role="admin"` — now rejected with 400, admins can only be created by an existing admin; (b) the seeded admin was scoped to `state="Maharashtra"` but aggregates are keyed `"City, State"`, so `region == state` matched nothing → suppressed/empty dashboard — jurisdiction matching is now suffix-aware (`region == state` OR `region ILIKE '%, state'`, applied via `_jurisdiction_filter` in all 5 analytics endpoints); (c) demo cohort was below the 10-per-region-period suppression threshold — seed now adds 10 extra patients × 5 cities.
-  - **New endpoint:** `POST /api/v1/admin/users` (`AdminCreate` schema) creates a verified admin account (201), returns `UserResponse`, 400 on duplicate email, admin-only (403 otherwise).
-  - **Seed data:** demo admin is now global (`state=None`); `seed_demo.py` adds a 50-patient extra cohort (`seed.{city}.{n}@campus.edu`/`pass123`, rotated severities); `get_or_create_user` self-heals state/city/full_name/is_verified. Demo DB was flushed and reseeded to a canonical 59 users / 10 non-suppressed region-periods (all prior test residue removed).
-  - **Admin dashboard redesigned on the Phase F design system:** `AdminDashboard.tsx` rewritten with `Card`(glass)/`Button`/`Select`/`Input`, editorial header + gold `#b8860b` chart theme and custom tooltip, graceful suppressed-state card, spike alerts, region filter, and an "Administrator Accounts" creation form wired to `POST /admin/users`.
+  - **Per-instrument reminder endpoint:** `GET /api/v1/patient/screening/reminder` now returns one reminder status per instrument — keyed `"PHQ-9"` and `"GAD-7"` (canonical `screening_type` values) via a new `_latest_result_for` helper — instead of a single `should_remind`. Completing one assessment never suppresses the other. Existing smart intervals unchanged (`compute_reminder`: 14-day default, 7-day elevated-band, recency + severity aware).
+  - **New frontend daily nudge:** `useScreeningReminder` hook fetches the endpoint at most once per calendar day (result cached in `sessionStorage` under `screening_reminder_checked_<date>`); `AssessmentReminderModal` (per-instrument labels, "Take a" primary + secondary-optional + Take later / Skip today) renders for patient role via an `enabled` guard in `MainLayout` (role gate is layout-level, per user decision). "Skip today" persists to `localStorage` (`screening_reminder_skip_<TYPE>_<date>`) so the reminder stays hidden until midnight; "Take later" dismisses for the session only — the assessment stays reachable from the Dashboard card.
+  - **Deep-link prep:** `ScreeningPage` now reads `?type=` (GAD-7 vs default PHQ-9) so "Take now" lands on the chosen instrument.
 - New/modified modules:
-  - Backend: `app/api/v1/admin.py` (`POST /users`, `check_admin_jurisdiction` suffix-aware, `_jurisdiction_filter`), `app/api/v1/auth.py` (signup role guard), `app/schemas/user.py` (`AdminCreate`), `app/seed_demo.py`.
-  - Tests: new `tests/test_admin_login.py` (signup rejects admin, admin-create → login round-trip, duplicate 400, non-admin 403, state admin sees `"City, State"` rows); `tests/test_doctor_profile_upgrade.py` / `test_doctor_approval.py` admin helpers now provision admins via DB (signup can't create admins anymore).
-  - Frontend: `frontend/src/pages/admin/AdminDashboard.tsx` (full rewrite).
+  - Backend: `app/api/v1/screening.py` (reminder endpoint per-instrument), new `tests/test_screening_reminder.py`.
+  - Frontend: `hooks/useScreeningReminder.ts` (new), `components/AssessmentReminderModal.tsx` (new), `layouts/MainLayout.tsx`, `pages/patient/screening/ScreeningPage.tsx`.
 - Key decisions made:
-  - Admins cannot self-register — `POST /admin/users` is the only path (matches "admin accounts must be created by an existing administrator").
-  - Jurisdiction matching uses `region == state OR region ILIKE '%, state'` (covers both `"Maharashtra"` and `"Pune, Maharashtra"` keys).
-  - Dashboard golden/gray theme pulled from Phase F tokens; mocked placeholder aggregates removed in favor of real seeded data.
+  - Reminder is per-instrument (independent booleans), not a shared daily flag — user decision #2.
+  - Placement = `MainLayout` wrapper gated on `user.role === 'patient'` (option B), not a new PatientLayout.
+  - One API call per day: sessionStorage cache keyed by calendar date; midnight reset via same key. Skip is calendar-day-scoped (localStorage); Take-later is session-scoped only.
+  - Engine `compute_reminder` left untouched — existing `test_screening_engine.py` unit tests (default/elevated intervals) still cover scoring-led logic; new endpoint tests assert the per-instrument shape + independence.
 - Verification:
-  - Backend full suite: **106 passed**.
+  - Backend full suite: **108 passed** (was 106; +2 `test_screening_reminder.py`: both-instruments present with `no_screening_on_record`, completed PHQ-9 → `not_due` while GAD-7 still `should_remind`). Tests clean up their own rows (screening results deleted before user).
   - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only (no new).
-  - Live: `admin@campus.edu` login → overview non-suppressed (110 patients, 5 regions, 110 screenings, 44 alerts, 28 VR, 770 moods, PHQ-9 bands populated); trend 10 rows 0 suppressed; region filter works; state-scoped admin sees only `"Bengaluru, Karnataka"` (non-suppressed); signup `role=admin` → 400; `POST /admin/users` round-trip + non-admin 403 verified against the live server.
-  - Demo DB canonical: 59 users, 10 region-periods (11 patients each), no test residue (`users` with non-`@campus.edu` = 0).
-- Known issues / follow-ups: None. Next: H6 — SAR Workshop / student panel polish (per implementation-plan-3.md).
-- Next: H6.
+  - Live: `alice@campus.edu` → `GET /patient/screening/reminder` returns `{"PHQ-9": {...should_remind: true, interval_days: 7}, "GAD-7": {...}}` (elevated-band 7-day interval correctly surfaced per instrument).
+  - Git: branch `feature/i1-assessment-daily-popup` created per 0b off `fix/h5-admin-login` (develop still lacks H1–H5 — PR not yet merged).
+- Known issues / follow-ups: None. Next: I2 — One-question-at-a-time flow (`feature/i2-assessment-one-at-a-time`).
+- Next: I2.

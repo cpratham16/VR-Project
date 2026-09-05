@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../../api/client';
 
 interface QuestionItem {
@@ -24,8 +25,10 @@ interface ScreeningResult {
 }
 
 export default function ScreeningPage() {
+  const [searchParams] = useSearchParams();
+  const initialType = searchParams.get('type') === 'GAD-7' ? 'GAD-7' : 'PHQ-9';
   const [activeTab, setActiveTab] = useState<'assess' | 'history'>('assess');
-  const [selectedType, setSelectedType] = useState<'PHQ-9' | 'GAD-7'>('PHQ-9');
+  const [selectedType, setSelectedType] = useState<'PHQ-9' | 'GAD-7'>(initialType);
   const [questionnaire, setQuestionnaire] = useState<QuestionnaireDefinition | null>(null);
   const [answers, setAnswers] = useState<number[]>([]);
   const [result, setResult] = useState<ScreeningResult | null>(null);

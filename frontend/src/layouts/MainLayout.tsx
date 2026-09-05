@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import AppHeader from '../components/AppHeader';
 import { useAuth } from '../contexts/AuthContext';
 import PanicModal from '../components/PanicModal';
+import AssessmentReminderModal from '../components/AssessmentReminderModal';
+import { useScreeningReminder, type ScreeningType } from '../hooks/useScreeningReminder';
 
 const COLLAPSE_KEY = 'mindora-sidebar-collapsed';
 
@@ -43,8 +45,17 @@ function PublicHeader() {
 
 export default function MainLayout() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState<boolean>(() => localStorage.getItem(COLLAPSE_KEY) === '1');
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const isPatient = user?.role === 'patient';
+  const { dueTypes, skipToday, takeLater } = useScreeningReminder(isPatient && !!user);
+
+  const handleScreeningNavigate = (type?: ScreeningType) => {
+    takeLater();
+    navigate(type ? `/patient/screening?type=${encodeURIComponent(type)}` : '/patient/screening');
+  };
 
   useEffect(() => {
     localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
@@ -89,6 +100,15 @@ export default function MainLayout() {
         <div className="fixed bottom-4 left-4 z-40">
           <PanicModal />
         </div>
+      )}
+
+      {isPatient && (
+        <AssessmentReminderModal
+          dueTypes={dueTypes}
+          onTakeNow={handleScreeningNavigate}
+          onTakeLater={takeLater}
+          onSkip={skipToday}
+        />
       )}
     </div>
   );

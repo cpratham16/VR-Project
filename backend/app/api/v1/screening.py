@@ -204,19 +204,32 @@ async def get_screening_trend(
     view["screening_type"] = code
     return view
 
+async def _latest_result_for(db: AsyncSession, user_id, screening_type: str):
+    result = await db.execute(
+        select(ScreeningResult)
+        .where(
+            ScreeningResult.user_id == user_id,
+            ScreeningResult.screening_type == screening_type,
+        )
+        .order_by(ScreeningResult.created_at.desc())
+    )
+    return result.scalars().first()
+
 @router.get("/reminder")
 async def get_screening_reminder(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Usage-based smart reminder: nudge re-screening based on recency and last severity."""
-    latest_query = await db.execute(
-        select(ScreeningResult)
-        .where(ScreeningResult.user_id == current_user.id)
-        .order_by(ScreeningResult.created_at.desc())
-    )
-    latest = latest_query.scalars().first()
-    return screening_engine_service.compute_reminder(
-        latest.created_at if latest else None,
-        latest.severity_band if latest else None
-    )
+    """Per-instrument re-screening nudges — PHQ-9 and GAD-7 are independent.
+
+    Returns one reminder status per instrument so completing one never
+    suppresses the other, keyed by the canonical screening_type value.
+    """
+    reminders = {}
+    for code in ("PHQ-9", "GAD-7"):
+        latest = await _latest_result_for(db, current_user.id, code)
+        reminders[code] = screening_engine_service.compute_reminder(
+            latest.created_at if latest else None,
+            latest.severity_band if latest else None,
+        )
+    return reminders
