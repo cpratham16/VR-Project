@@ -9,12 +9,14 @@ Idempotent: users are skipped if their email already exists. Run AFTER
 Demo credentials printed at the end of execution.
 """
 import asyncio
+import json
 from datetime import datetime, timedelta
 from sqlalchemy.future import select
 
 from app.core.database import AsyncSessionLocal
 from app.core.security import get_password_hash
 from app.models.user import User
+from app.models.doctor import DoctorProfile
 from app.models.patient import PatientProfile, ConsentRecord
 from app.models.screening import ScreeningResult
 from app.models.mood import MoodEntry
@@ -29,12 +31,20 @@ from app.services.anonymizer import run_aggregation
 
 DEMO = {
     "admin": {"email": "admin@campus.edu", "password": "admin123", "role": "admin",
-              "state": "Maharashtra", "city": "Pune"},
+              "state": None, "city": None},
     "doctors": [
         {"email": "doctor1@campus.edu", "password": "doc123", "role": "doctor",
-         "state": "Delhi", "city": "New Delhi"},
+         "full_name": "Dr. Meera Iyer",
+         "state": "Delhi", "city": "New Delhi", "license_number": "DMC-2011-45872",
+         "specialty": "Psychiatrist", "languages": ["English", "Hindi"]},
         {"email": "doctor2@campus.edu", "password": "doc123", "role": "doctor",
-         "state": "Karnataka", "city": "Bengaluru"},
+         "full_name": "Dr. Arjun Nair",
+         "state": "Karnataka", "city": "Bengaluru", "license_number": "KMC-2014-90211",
+         "specialty": "Clinical Psychologist", "languages": ["English", "Kannada", "Tamil"]},
+        {"email": "doctor3@campus.edu", "password": "doc123", "role": "doctor",
+         "full_name": "Dr. Kavita Deshmukh",
+         "state": "Maharashtra", "city": "Pune", "license_number": "MMC-2016-33417",
+         "specialty": "Counselor / Therapist", "languages": ["English", "Marathi", "Hindi"]},
     ],
     "patients": [
         {"email": "alice@campus.edu", "password": "pass123", "role": "patient",
@@ -50,6 +60,8 @@ DEMO = {
     ],
 }
 
+DEFAULT_REGION = "Unknown Region"
+
 # index -> severity profile per patient (PHQ-9 total, GAD-7 total)
 SEVERITY_PROFILES = [
     {"phq9": 17, "gad7": 14},   # alice: moderate-severe / moderate
@@ -58,6 +70,37 @@ SEVERITY_PROFILES = [
     {"phq9": 12, "gad7": 11},   # dave: moderate / moderate
     {"phq9": 3, "gad7": 3},     # eve: minimal / minimal
 ]
+
+# Extra cohorts per existing region so anonymized aggregates exceed the
+# suppression threshold (<10 patients per region-period is suppressed).
+EXTRA_PATIENT_CITIES = [
+    ("Pune", "Maharashtra", 10),
+    ("New Delhi", "Delhi", 10),
+    ("Bengaluru", "Karnataka", 10),
+    ("Chennai", "Tamil Nadu", 10),
+    ("Kochi", "Kerala", 10),
+]
+
+
+def _extra_patients() -> list:
+    """Generate an idempotent cohort of extra demo patients grouped by city."""
+    out = []
+    for city, state, count in EXTRA_PATIENT_CITIES:
+        for n in range(1, count + 1):
+            slug = city.lower().replace(" ", "")
+            out.append({
+                "email": f"seed.{slug}.{n}@campus.edu",
+                "password": "pass123",
+                "role": "patient",
+                "state": state,
+                "city": city,
+                "pseudonym": f"{''.join(w.title() for w in city.split())}_{n}",
+            })
+    return out
+
+
+def severity_for(index: int) -> dict:
+    return SEVERITY_PROFILES[index % len(SEVERITY_PROFILES)]
 
 CATEGORIES = ["Academic Stress", "Exam Anxiety", "Peer Support", "General Wellness"]
 
@@ -81,17 +124,18 @@ async def seed():
 
         admin = await get_or_create_user(db, DEMO["admin"])
         doctors = [await get_or_create_user(db, d) for d in DEMO["doctors"]]
-        patients = [await get_or_create_user(db, p) for p in DEMO["patients"]]
+        demo_patients = DEMO["patients"] + _extra_patients()
+        patients = [await get_or_create_user(db, p) for p in demo_patients]
         await db.commit()
 
-        for i, p in enumerate(patients):
-            data = DEMO["patients"][i]
+        for i, data in enumerate(demo_patients):
+            p = patients[i]
             await ensure_patient_profile(db, p, data["pseudonym"])
             await ensure_consent(db, p)
-            await seed_screenings(db, p, SEVERITY_PROFILES[i])
+            await seed_screenings(db, p, severity_for(i))
             await seed_mood_entries(db, p, i)
             await seed_appointment(db, p, doctors[i % len(doctors)])
-            await seed_risk_alerts(db, p, SEVERITY_PROFILES[i], doctors[i % len(doctors)])
+            await seed_risk_alerts(db, p, severity_for(i), doctors[i % len(doctors)])
             await seed_chat(db, p)
             await seed_vr_sessions(db, p, doctors[i % len(doctors)], scenarios, i)
             await seed_notes(db, p, doctors[i % len(doctors)])
@@ -108,24 +152,46 @@ async def seed():
         print("Doctor : doctor2@campus.edu / doc123")
         for p in DEMO["patients"]:
             print(f"Patient: {p['email']} / pass123")
+        print(f"Patient: seed.*@campus.edu / pass123 ({len(demo_patients) - len(DEMO['patients'])} extra cohort patients seeded)")
         print(f"\nAnonymization pipeline ran: {summary['rows_written']} region-periods written.")
         print("Seeding complete.")
 
 
 async def get_or_create_user(db, data) -> User:
-    existing = (await db.execute(select(User).where(User.email == data["email"]))).scalars().first()
-    if existing:
-        return existing
-    user = User(
-        email=data["email"],
-        hashed_password=get_password_hash(data["password"]),
-        role=data["role"],
-        state=data.get("state"),
-        city=data.get("city"),
-        is_verified=True,
-    )
-    db.add(user)
-    await db.flush()
+    user = (await db.execute(select(User).where(User.email == data["email"]))).scalars().first()
+    if not user:
+        user = User(
+            email=data["email"],
+            hashed_password=get_password_hash(data["password"]),
+            role=data["role"],
+            state=data.get("state"),
+            city=data.get("city"),
+            full_name=data.get("full_name"),
+            is_verified=True,
+        )
+        db.add(user)
+        await db.flush()
+    else:
+        # Self-heal reruns: keep demo profiles consistent (global admin, etc.)
+        user.state = data.get("state")
+        user.city = data.get("city")
+        user.full_name = data.get("full_name")
+        user.is_verified = True
+
+    if user.role == "doctor":
+        profile = (await db.execute(select(DoctorProfile).where(DoctorProfile.user_id == user.id))).scalars().first()
+        if not profile:
+            db.add(DoctorProfile(
+                user_id=user.id,
+                license_number=data.get("license_number", "DEMO-LICENSE-0000"),
+                specialty=data.get("specialty"),
+                languages=json.dumps(data.get("languages", ["English"])),
+                credential_filename="demo-seeded-credential.pdf",
+                uploaded_at=datetime.utcnow(),
+                review_status="approved",
+                reviewed_at=datetime.utcnow(),
+            ))
+            await db.flush()
     return user
 
 
