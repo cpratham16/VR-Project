@@ -1,4 +1,4 @@
-"""Anonymization ETL pipeline.
+﻿"""Anonymization ETL pipeline.
 
 Reads clinical/activity tables, groups by (region, YYYY-MM), computes numeric
 aggregates only, and writes them into the identifier-free reporting store

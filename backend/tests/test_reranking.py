@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 from app.services.vector_store import vector_store
 
 def test_reranking_accuracy():

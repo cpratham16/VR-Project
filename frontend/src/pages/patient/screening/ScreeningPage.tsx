@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { apiClient } from '../../../api/client';
 
 interface QuestionItem {
@@ -119,7 +119,7 @@ export default function ScreeningPage() {
           <button
             onClick={() => setActiveTab('assess')}
             className={`px-4 py-2 text-sm rounded-md font-medium transition ${
-              activeTab === 'assess' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              activeTab === 'assess' ? 'bg-accent text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             Take Assessment
@@ -127,7 +127,7 @@ export default function ScreeningPage() {
           <button
             onClick={() => setActiveTab('history')}
             className={`px-4 py-2 text-sm rounded-md font-medium transition ${
-              activeTab === 'history' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              activeTab === 'history' ? 'bg-accent text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             History & Trends
@@ -149,7 +149,7 @@ export default function ScreeningPage() {
                   onClick={() => setSelectedType('PHQ-9')}
                   className={`py-2 px-4 rounded-md font-semibold text-sm transition ${
                     selectedType === 'PHQ-9'
-                      ? 'bg-teal-50 text-teal-700 border border-teal-300'
+                      ? 'bg-muted text-accent border border-accent/40'
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
@@ -160,7 +160,7 @@ export default function ScreeningPage() {
                   onClick={() => setSelectedType('GAD-7')}
                   className={`py-2 px-4 rounded-md font-semibold text-sm transition ${
                     selectedType === 'GAD-7'
-                      ? 'bg-teal-50 text-teal-700 border border-teal-300'
+                      ? 'bg-muted text-accent border border-accent/40'
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
@@ -192,7 +192,7 @@ export default function ScreeningPage() {
                               aria-pressed={answers[qIdx] === optIdx}
                               className={`py-2 px-3 text-xs sm:text-sm rounded border text-center font-medium transition ${
                                 answers[qIdx] === optIdx
-                                  ? 'bg-teal-700 text-white border-teal-700'
+                                  ? 'bg-accent text-white border-accent'
                                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                               }`}
                             >
@@ -208,7 +208,7 @@ export default function ScreeningPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="py-3 px-6 bg-teal-700 text-white font-medium rounded-lg shadow hover:bg-teal-800 disabled:opacity-50 transition"
+                      className="py-3 px-6 bg-accent text-white font-medium rounded-lg shadow hover:bg-accent-secondary disabled:opacity-50 transition"
                     >
                       Submit Assessment
                     </button>
@@ -219,7 +219,7 @@ export default function ScreeningPage() {
           ) : (
             /* Results Screen */
             <div className="bg-white p-8 rounded-lg shadow-sm text-center space-y-6" role="status" aria-live="polite">
-              <div className="inline-block p-4 bg-teal-50 rounded-full">
+              <div className="inline-block p-4 bg-muted rounded-full">
                 <span aria-hidden="true" className="text-3xl">📊</span>
               </div>
               <div>
@@ -227,9 +227,9 @@ export default function ScreeningPage() {
                 <p className="text-gray-600 mt-1">{result.screening_type} Assessment Result</p>
               </div>
 
-              <div className="max-w-md mx-auto p-6 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+              <div className="max-w-md mx-auto p-6 bg-gray-50 rounded-md border border-gray-200 space-y-3">
                 <p className="text-sm text-gray-500 uppercase tracking-wide font-semibold">Total Score</p>
-                <div className="text-4xl font-extrabold text-teal-700">{result.total_score}</div>
+                <div className="text-4xl font-extrabold text-accent">{result.total_score}</div>
                 <div className={`inline-block px-4 py-1 text-sm font-semibold rounded-full border ${getBandColor(result.severity_band)}`}>
                   {result.severity_band} Symptom Band
                 </div>
@@ -237,13 +237,13 @@ export default function ScreeningPage() {
 
               <div className="max-w-md mx-auto text-left text-xs text-gray-500 bg-amber-50 p-4 rounded border border-amber-200 space-y-1">
                 <p className="font-semibold text-amber-900">Important Clinical Note:</p>
-                <p>This result provides a standardized score band for monitoring purposes only. It is not a formal medical diagnosis. If you are feeling distressed or in need of support, please connect with a verified campus counselor or use our panic SOS feature.</p>
+                <p>This result provides a standardized score band for monitoring purposes only. It is not a formal medical diagnosis. If you are feeling distressed or in need of support, please connect with a verified counselor or use our panic SOS feature.</p>
               </div>
 
               <div className="flex justify-center space-x-4 pt-4">
                 <button
                   onClick={() => setResult(null)}
-                  className="px-5 py-2 bg-teal-600 text-white font-medium rounded-md hover:bg-teal-700 transition"
+                  className="px-5 py-2 bg-accent text-white font-medium rounded-md hover:bg-accent-secondary transition"
                 >
                   Take Another Assessment
                 </button>
@@ -278,7 +278,7 @@ export default function ScreeningPage() {
                     <span className="ml-3 text-xs text-gray-500">{new Date(item.created_at).toLocaleString()}</span>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <span className="text-gray-700 text-sm">Score: <strong className="text-teal-700">{item.total_score}</strong></span>
+                    <span className="text-gray-700 text-sm">Score: <strong className="text-accent">{item.total_score}</strong></span>
                     <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getBandColor(item.severity_band)}`}>
                       {item.severity_band}
                     </span>

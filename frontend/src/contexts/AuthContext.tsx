@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+﻿import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { apiClient } from '../api/client';
 
 export interface User {
@@ -7,6 +7,16 @@ export interface User {
   role: string;
   is_active: boolean;
   is_verified: boolean;
+  full_name?: string | null;
+  has_credentials?: boolean;
+  review_status?: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string | null;
+  state?: string | null;
+  city?: string | null;
+  phone?: string | null;
+  emergency_contact_phone?: string | null;
+  specialty?: string | null;
+  languages?: string[];
 }
 
 interface AuthContextType {
@@ -15,6 +25,7 @@ interface AuthContextType {
   login: (token: string, user: User) => void;
   logout: () => void;
   isLoading: boolean;
+  setUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isLoading, setUser }}>
       {children}
     </AuthContext.Provider>
   );

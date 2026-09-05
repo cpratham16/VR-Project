@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { apiClient } from '../../../api/client';
 import {
   ResponsiveContainer,
@@ -9,6 +9,10 @@ import {
   Tooltip,
   CartesianGrid
 } from 'recharts';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/Card';
+import { Button } from '../../../components/ui/Button';
+import { Select } from '../../../components/ui/Select';
+import { Textarea } from '../../../components/ui/Textarea';
 
 interface MoodEntry {
   id: string;
@@ -21,12 +25,15 @@ interface MoodEntry {
 }
 
 const MOOD_SCALES = [
-  { score: 1, emoji: '😞', label: 'Severe Distress', color: 'bg-red-500 text-white' },
-  { score: 2, emoji: '😟', label: 'Low / Stressed', color: 'bg-orange-400 text-white' },
-  { score: 3, emoji: '😐', label: 'Neutral / Okay', color: 'bg-amber-400 text-gray-900' },
-  { score: 4, emoji: '🙂', label: 'Good / Positive', color: 'bg-emerald-400 text-gray-900' },
-  { score: 5, emoji: '😊', label: 'Excellent / Calm', color: 'bg-teal-600 text-white' }
+  { score: 1, emoji: '😞', label: 'Severe Distress', active: 'bg-red-600 text-white border-transparent' },
+  { score: 2, emoji: '😟', label: 'Low / Stressed', active: 'bg-orange-500 text-white border-transparent' },
+  { score: 3, emoji: '😐', label: 'Neutral / Okay', active: 'bg-amber-400 text-gray-900 border-transparent' },
+  { score: 4, emoji: '🙂', label: 'Good / Positive', active: 'bg-emerald-500 text-white border-transparent' },
+  { score: 5, emoji: '😊', label: 'Excellent / Calm', active: 'bg-accent text-white border-transparent' }
 ];
+
+const INACTIVE_MOOD_CLS =
+  'bg-white text-muted-foreground border-[#e8e4df] hover:bg-muted hover:border-[#d6cfc7]';
 
 const PREDEFINED_TAGS = [
   '📚 Academic / Exams',
@@ -36,6 +43,12 @@ const PREDEFINED_TAGS = [
   '🏠 Family / Personal',
   '⚡ Anxiety / Overwhelmed',
   '💼 Career / Future'
+];
+
+const TIME_RANGE_OPTIONS = [
+  { value: '7', label: 'Last 7 days' },
+  { value: '30', label: 'Last 30 days' },
+  { value: '90', label: 'Last 90 days' }
 ];
 
 export default function MoodTrackerPage() {
@@ -136,15 +149,15 @@ export default function MoodTrackerPage() {
       const data = payload[0].payload;
       const mood = getMoodItem(data.score);
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-md text-xs space-y-1">
-          <p className="font-semibold text-gray-800">{data.fullDate}</p>
-          <div className="flex items-center space-x-1 font-bold text-teal-700">
-            <span>{mood.emoji}</span>
-            <span>Score: {data.score}/5 ({mood.label})</span>
+        <div className="space-y-1 rounded-md border border-[#e8e4df] bg-white px-3 py-2 text-xs shadow-md">
+          <p className="font-medium text-foreground">{data.fullDate}</p>
+          <div className="flex items-center gap-1.5 font-bold text-foreground">
+            <span aria-hidden="true">{mood.emoji}</span>
+            <span>
+              {mood.label} · {data.score}/5
+            </span>
           </div>
-          {data.tags.length > 0 && (
-            <p className="text-gray-600">Tags: {data.tags.join(', ')}</p>
-          )}
+          {data.tags.length > 0 && <p className="text-muted-foreground">Tags: {data.tags.join(', ')}</p>}
         </div>
       );
     }
@@ -152,200 +165,234 @@ export default function MoodTrackerPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Title Card */}
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <h2 className="text-2xl font-bold text-gray-800">Mood Tracker & Journal</h2>
-        <p className="text-sm text-gray-600 mt-1">Record your daily feelings, tag influencing factors, and keep a private personal journal.</p>
-      </div>
+    <div className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+      {/* Title */}
+      <header className="mb-2">
+        <p className="small-caps text-accent">Well-being journal</p>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">Mood Tracker & Journal</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Record your daily feelings, tag influencing factors, and keep a private personal journal.
+        </p>
+      </header>
 
-      {error && <div className="p-4 text-sm text-red-700 bg-red-100 rounded-lg">{error}</div>}
-      {success && <div role="status" aria-live="polite" className="p-4 text-sm text-emerald-700 bg-emerald-100 rounded-lg">{success}</div>}
+      {error && (
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div role="status" aria-live="polite" className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+          {success}
+        </div>
+      )}
 
       {/* Check-In / Edit Form */}
-      <div className="bg-white p-6 rounded-lg shadow-sm space-y-6">
-        <div className="flex justify-between items-center border-b border-gray-200 pb-3">
-          <h3 className="text-lg font-semibold text-gray-800">
-            {editingId ? 'Edit Recent Mood Entry' : 'Daily Check-In'}
-          </h3>
+      <Card variant="glass">
+        <CardHeader className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <CardTitle>{editingId ? 'Edit Recent Mood Entry' : 'Daily Check-In'}</CardTitle>
+            <CardDescription>
+              {editingId ? 'Adjusting an existing log — your journal is appended to your history.' : 'A few seconds a day helps you spot patterns early.'}
+            </CardDescription>
+          </div>
           {editingId && (
-            <button
-              onClick={resetForm}
-              className="text-xs text-gray-500 hover:text-gray-700 underline"
-            >
+            <Button type="button" variant="ghost" size="sm" onClick={resetForm}>
               Cancel Edit
-            </button>
+            </Button>
           )}
-        </div>
+        </CardHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Mood Scale Buttons */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">How are you feeling right now?</label>
-            <div className="grid grid-cols-5 gap-2" role="group" aria-label="Mood score selector">
-              {MOOD_SCALES.map((item) => (
-                <button
-                  key={item.score}
-                  type="button"
-                  onClick={() => setSelectedScore(item.score)}
-                  aria-label={`Mood score ${item.score} of 5 — ${item.label}`}
-                  aria-pressed={selectedScore === item.score}
-                  className={`p-3 rounded-xl flex flex-col items-center justify-center transition border ${
-                    selectedScore === item.score
-                      ? `${item.color} border-transparent ring-2 ring-teal-500 scale-105 shadow`
-                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  <span aria-hidden="true" className="text-2xl sm:text-3xl">{item.emoji}</span>
-                  <span className="text-xs mt-1 font-medium text-center hidden sm:inline">{item.label}</span>
-                </button>
-              ))}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Mood Scale Buttons */}
+            <div>
+              <span className="mb-3 block font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                How are you feeling right now?
+              </span>
+              <div className="grid grid-cols-5 gap-2" role="group" aria-label="Mood score selector">
+                {MOOD_SCALES.map((item) => {
+                  const selected = selectedScore === item.score;
+                  return (
+                    <button
+                      key={item.score}
+                      type="button"
+                      onClick={() => setSelectedScore(item.score)}
+                      aria-label={`Mood score ${item.score} of 5 — ${item.label}`}
+                      aria-pressed={selected}
+                      className={`flex min-h-0 flex-col items-center justify-center gap-1 rounded-md border p-2 transition-all duration-200 cursor-pointer ${
+                        selected
+                          ? `${item.active} ring-2 ring-accent/20 scale-[1.03] shadow-sm`
+                          : INACTIVE_MOOD_CLS
+                      }`}
+                    >
+                      <span aria-hidden="true" className="text-2xl sm:text-3xl">
+                        {item.emoji}
+                      </span>
+                      <span className="hidden text-[10px] font-medium leading-tight text-center sm:inline">
+                        {item.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* Tags */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">What factors affected your mood today?</label>
-            <div className="flex flex-wrap gap-2">
-              {PREDEFINED_TAGS.map((tag) => {
-                const active = selectedTags.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => handleTagToggle(tag)}
-                    aria-pressed={active}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
-                      active
-                        ? 'bg-teal-700 text-white border-teal-700 shadow-sm'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                );
-              })}
+            {/* Tags */}
+            <div>
+              <span className="mb-2 block font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                What factors affected your mood today?
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {PREDEFINED_TAGS.map((tag) => {
+                  const active = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleTagToggle(tag)}
+                      aria-pressed={active}
+                      className={`cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                        active
+                          ? 'border-accent bg-accent text-white shadow-sm'
+                          : 'border-[#e8e4df] bg-white text-muted-foreground hover:border-[#d6cfc7] hover:bg-muted'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* Journal Text */}
-          <div>
-            <label htmlFor="mood-journal" className="block text-sm font-medium text-gray-700 mb-1">
-              Private Journal Entry <span className="text-xs text-gray-600 font-normal">(Optional — visible only to you and your treating doctor)</span>
-            </label>
-            <textarea
+            {/* Journal Text */}
+            <Textarea
               id="mood-journal"
+              label="Private Journal Entry"
               rows={3}
               value={journalText}
               onChange={(e) => setJournalText(e.target.value)}
               placeholder="Write down your thoughts, events of the day, or anything on your mind..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 text-sm"
+              helperText="Optional — visible only to you and your treating doctor."
             />
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 bg-teal-700 text-white font-medium rounded-md shadow hover:bg-teal-800 transition disabled:opacity-50"
-          >
-            {loading ? 'Saving...' : editingId ? 'Update Entry' : 'Save Mood Log'}
-          </button>
-        </form>
-      </div>
+            <Button type="submit" variant="primary" size="lg" className="w-full" isLoading={loading}>
+              {loading ? 'Saving…' : editingId ? 'Update Entry' : 'Save Mood Log'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Mood Analytics Chart (Recharts) */}
-      <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-800">Mood Trends over Time</h3>
-          <select
-            value={timeRange}
+      <Card variant="glass">
+        <CardHeader className="flex flex-wrap items-center gap-3">
+          <div className="min-w-0">
+            <CardTitle>Mood Trends over Time</CardTitle>
+            <CardDescription>Your reported mood, on a 1–5 scale, over the selected window.</CardDescription>
+          </div>
+          <Select
+            aria-label="Mood history time range"
+            options={TIME_RANGE_OPTIONS}
+            value={String(timeRange)}
             onChange={(e) => setTimeRange(Number(e.target.value))}
-            className="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-700"
-          >
-            <option value={7}>Last 7 Days</option>
-            <option value={30}>Last 30 Days</option>
-            <option value={90}>Last 90 Days</option>
-          </select>
-        </div>
-
-        {chartData.length === 0 ? (
-          <div className="py-12 text-center text-gray-400 text-sm">
-            No mood logs available for this period. Add your first entry above!
-          </div>
-        ) : (
-          <div className="h-64 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorMood" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0d9488" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#0d9488" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
-                <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11, fill: '#6b7280' }} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="score" stroke="#0d9488" strokeWidth={3} fillOpacity={1} fill="url(#colorMood)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
+            className="w-40"
+          />
+        </CardHeader>
+        <CardContent>
+          {chartData.length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">
+                No mood logs yet
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Add your first entry above to start spotting patterns.
+              </p>
+            </div>
+          ) : (
+            <div className="h-64 w-full pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorMood" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#b8860b" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#b8860b" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e8e4df" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b6b6b' }} />
+                  <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11, fill: '#6b6b6b' }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area type="monotone" dataKey="score" stroke="#b8860b" strokeWidth={3} fillOpacity={1} fill="url(#colorMood)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Historical Entries Timeline */}
-      <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
-        <h3 className="text-lg font-semibold text-gray-800">Recent Journal Logs</h3>
-
-        {entries.length === 0 ? (
-          <div className="text-center py-6 text-gray-400 text-sm">No journal entries recorded yet.</div>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {entries.map((entry) => {
-              const mood = getMoodItem(entry.mood_score);
-              return (
-                <div key={entry.id} className="py-4 space-y-2">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-2xl">{mood.emoji}</span>
-                      <div>
-                        <span className="font-semibold text-gray-800 text-sm">{mood.label}</span>
-                        <span className="text-xs text-gray-400 block sm:inline sm:ml-2">
-                          {new Date(entry.created_at).toLocaleString()}
+      <Card variant="glass">
+        <CardHeader>
+          <CardTitle>Recent Journal Logs</CardTitle>
+          <CardDescription>Every check-in you have recorded, most recent first.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {entries.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">No journal entries recorded yet.</div>
+          ) : (
+            <div className="divide-y divide-[#e8e4df]">
+              {entries.map((entry) => {
+                const mood = getMoodItem(entry.mood_score);
+                return (
+                  <article key={entry.id} className="space-y-2 py-4 first:pt-0 last:pb-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <span aria-hidden="true" className="text-2xl">
+                          {mood.emoji}
                         </span>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{mood.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(entry.created_at).toLocaleString()}
+                          </p>
+                        </div>
                       </div>
+                      {entry.can_edit && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleStartEdit(entry)}
+                        >
+                          Edit
+                        </Button>
+                      )}
                     </div>
-                    {entry.can_edit && (
-                      <button
-                        onClick={() => handleStartEdit(entry)}
-                        className="text-xs text-teal-600 hover:text-teal-700 font-medium px-2 py-1 bg-teal-50 rounded border border-teal-200"
-                      >
-                        Edit
-                      </button>
+
+                    {entry.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {entry.tags.map((t) => (
+                          <span
+                            key={t}
+                            className="rounded-full border border-[#e8e4df] bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
                     )}
-                  </div>
 
-                  {entry.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {entry.tags.map((t) => (
-                        <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {entry.journal_text && (
-                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded border border-gray-100 italic">
-                      "{entry.journal_text}"
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                    {entry.journal_text && (
+                      <p className="rounded-md border border-[#e8e4df] bg-muted p-3 text-sm italic leading-relaxed text-muted-foreground">
+                        “{entry.journal_text}”
+                      </p>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

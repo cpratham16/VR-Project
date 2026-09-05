@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../api/client';
+import HelplineCards from './HelplineCards';
 
 export default function PanicModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,8 +22,8 @@ export default function PanicModal() {
   const handlePanicClick = async () => {
     setIsOpen(true);
     try {
-      await apiClient.post('/patient/panic', { location_note: 'Campus Emergency Request' });
-      setStatusMsg('Campus Doctor & Crisis Team have been notified of your alert.');
+      await apiClient.post('/patient/panic', { location_note: 'Panic SOS from platform' });
+      setStatusMsg('Your counselor and on-call crisis team have been notified of your alert.');
     } catch {
       setStatusMsg('Local Crisis Numbers available below. (Offline Mode Active)');
     }
@@ -30,14 +31,20 @@ export default function PanicModal() {
 
   return (
     <>
-      <button
-        onClick={handlePanicClick}
-        aria-label="Panic SOS — immediately alert crisis support"
-        className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-pulse cursor-pointer"
-        title="Immediate Emergency & Crisis Support"
-      >
-        <span aria-hidden="true" className="text-xl">🆘</span> Panic SOS
-      </button>
+      <div className="relative">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 rounded-full bg-red-500/60 animate-ping"
+        />
+        <button
+          onClick={handlePanicClick}
+          aria-label="Panic SOS — immediately alert crisis support"
+          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-lg cursor-pointer transition-all duration-200 hover:bg-red-700 hover:scale-105 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-500/50"
+          title="Immediate Emergency & Crisis Support"
+        >
+          <span aria-hidden="true" className="text-2xl">🆘</span>
+        </button>
+      </div>
 
       {isOpen && (
         <div
@@ -63,27 +70,12 @@ export default function PanicModal() {
             </div>
 
             <p className="text-gray-700 text-sm mb-4">
-              If you are in immediate distress or feel unsafe, please connect with one of the emergency services below:
+              If you are struggling or in immediate distress, you do not have to face it alone. These services are
+              free, confidential, and available right now:
             </p>
 
-            <div className="space-y-3 mb-6">
-              <div className="bg-red-50 p-4 rounded-xl border border-red-200">
-                <div className="font-semibold text-red-900">Campus Emergency Line</div>
-                <div className="text-2xl font-black text-red-700">1800-999-0000</div>
-                <div className="text-xs text-red-600">24/7 Campus Medical & Counselor Response</div>
-              </div>
-
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
-                <div className="font-semibold text-blue-900">Tele-MANAS National Helpline</div>
-                <div className="text-2xl font-black text-blue-700">14416 / 1800-599-0019</div>
-                <div className="text-xs text-blue-600">Toll-free 24/7 Mental Health Support</div>
-              </div>
-
-              <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200">
-                <div className="font-semibold text-emerald-900">Student Crisis Contact</div>
-                <div className="text-2xl font-black text-emerald-700">+91 98765 43210</div>
-                <div className="text-xs text-emerald-600">Direct On-Call Campus Counselor</div>
-              </div>
+            <div className="mb-6">
+              <HelplineCards />
             </div>
 
             {statusMsg && (
@@ -95,6 +87,11 @@ export default function PanicModal() {
                 {statusMsg}
               </div>
             )}
+
+            <p className="mb-4 text-[11px] leading-relaxed text-gray-500">
+              Mindora's automated safety system also alerts your emergency contact and on-call counselors if a serious
+              risk is detected — but these hotlines are always the fastest route to a human being.
+            </p>
 
             <button
               onClick={closeModal}

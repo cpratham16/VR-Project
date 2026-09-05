@@ -1,92 +1,95 @@
-import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+import AppHeader from '../components/AppHeader';
 import { useAuth } from '../contexts/AuthContext';
 import PanicModal from '../components/PanicModal';
 
-export default function MainLayout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+const COLLAPSE_KEY = 'mindora-sidebar-collapsed';
 
-  const handleLogout = () => {
-    logout();
-    navigate('/auth/login');
-  };
-
-  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `font-medium ${isActive ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'}`;
+function PublicHeader() {
+  const linkCls = ({ isActive }: { isActive: boolean }) =>
+    `rounded-md px-3.5 py-2 text-sm font-medium tracking-[0.02em] transition-colors duration-200 ${
+      isActive ? 'text-accent' : 'text-muted-foreground hover:text-foreground'
+    }`;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <header className="sticky top-0 z-40 border-b border-[#e8e4df] bg-background/95 backdrop-blur-sm">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <Link to="/" className="flex items-center gap-2.5" aria-label="Mindora home">
+          <span
+            aria-hidden="true"
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-[#e8e4df] bg-white text-lg shadow-sm"
+          >
+            🧠
+          </span>
+          <span className="font-display text-lg font-bold tracking-normal text-foreground">Mindora</span>
+        </Link>
+        <nav aria-label="Public navigation" className="flex items-center gap-1">
+          <NavLink to="/" className={linkCls} end>
+            Home
+          </NavLink>
+          <NavLink to="/auth/login" className={linkCls}>
+            Login
+          </NavLink>
+          <NavLink to="/auth/signup" className={linkCls}>
+            Create account
+          </NavLink>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+export default function MainLayout() {
+  const { user } = useAuth();
+  const [collapsed, setCollapsed] = useState<boolean>(() => localStorage.getItem(COLLAPSE_KEY) === '1');
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
+  }, [collapsed]);
+
+  if (!user) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <PublicHeader />
+        <main id="main-content" className="flex-1">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-background">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-blue-700 font-semibold"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[60] focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:font-semibold focus:text-accent focus:shadow-lg focus:ring-2 focus:ring-accent"
       >
         Skip to main content
       </a>
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <span aria-hidden="true" className="text-2xl">🥽</span>
-            <span className="text-xl font-bold text-gray-900">VR MindHealth</span>
-          </Link>
 
-          <nav aria-label="Primary" className="flex items-center gap-6">
-            {user ? (
-              <>
-                {user.role === 'patient' && (
-                  <>
-                    <NavLink to="/patient/dashboard" className={navLinkClass}>Dashboard</NavLink>
-                    <NavLink to="/patient/screening" className={navLinkClass}>Screening</NavLink>
-                    <NavLink to="/patient/mood" className={navLinkClass}>Mood Tracker</NavLink>
-                    <NavLink to="/patient/community" className={navLinkClass}>Community</NavLink>
-                    <NavLink to="/patient/vr" className="text-indigo-600 font-semibold hover:text-indigo-800 flex items-center gap-1">
-                      <span aria-hidden="true">🥽</span> VR Therapy
-                    </NavLink>
-                    <NavLink to="/patient/chat" className="text-indigo-600 font-semibold hover:text-indigo-800 flex items-center gap-1">
-                      <span aria-hidden="true">🤖</span> AI Companion
-                    </NavLink>
-                    <NavLink to="/patient/appointments" className={navLinkClass}>Appointments</NavLink>
-                  </>
-                )}
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((prev) => !prev)}
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
+      />
 
-                {(user.role === 'doctor' || user.role === 'admin') && (
-                  <>
-                    <NavLink to="/doctor/dashboard" className={navLinkClass}>Triage Dashboard</NavLink>
-                    <NavLink to="/doctor/vr" className="text-indigo-700 hover:text-indigo-900 font-medium">VR Assignments</NavLink>
-                    <NavLink to="/doctor/moderation" className="text-amber-700 hover:text-amber-900 font-medium">Moderation Queue</NavLink>
-                    <NavLink to="/doctor/appointments" className={navLinkClass}>Doctor Calendar</NavLink>
-                  </>
-                )}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <AppHeader onOpenMobileSidebar={() => setMobileOpen(true)} />
 
-                {user.role === 'admin' && (
-                  <NavLink to="/admin/dashboard" className="bg-purple-100 text-purple-800 hover:bg-purple-200 font-semibold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1">
-                    <span aria-hidden="true">📊</span> Admin Panel
-                  </NavLink>
-                )}
+        <main id="main-content" className="flex-1">
+          <Outlet />
+        </main>
+      </div>
 
-                <PanicModal />
-
-                <button
-                  onClick={handleLogout}
-                  aria-label="Log out"
-                  className="text-gray-600 hover:text-gray-900 text-sm font-medium px-3 py-1 rounded border border-gray-300"
-                >
-                  Logout
-                </button>
-              </>
-            ) 
-              : (
-              <>
-                <Link to="/auth/login" className="text-gray-700 hover:text-blue-600 font-medium">Login</Link>
-                <Link to="/auth/signup" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">Sign Up</Link>
-                <PanicModal />
-              </>
-            )}
-          </nav>
+      {user.role === 'patient' && (
+        <div className="fixed bottom-4 left-4 z-40">
+          <PanicModal />
         </div>
-      </header>
-      <main id="main-content" className="flex-1">
-        <Outlet />
-      </main>
+      )}
     </div>
   );
 }

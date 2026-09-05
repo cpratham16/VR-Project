@@ -1,10 +1,11 @@
-from typing import Optional, List
+﻿from typing import Optional, List
 from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from datetime import datetime
 
 class CommunityCommentCreate(BaseModel):
     content: str
+    parent_id: Optional[UUID] = None
 
 class CommunityCommentResponse(BaseModel):
     id: UUID
@@ -14,6 +15,7 @@ class CommunityCommentResponse(BaseModel):
     is_flagged: bool
     moderation_status: str
     created_at: datetime
+    parent_id: Optional[UUID] = None
 
     model_config = ConfigDict(from_attributes=True)
 

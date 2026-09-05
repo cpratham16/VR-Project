@@ -34,6 +34,17 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 1 day (matches .env.example)
 
+    CREDENTIAL_UPLOAD_DIR: str = os.getenv("CREDENTIAL_UPLOAD_DIR", "uploads/credentials")
+    CREDENTIAL_MAX_SIZE_MB: int = int(os.getenv("CREDENTIAL_MAX_SIZE_MB", "5"))
+
+    # Crisis notification delivery (G6) — simulated until a real provider is configured
+    NOTIFICATIONS_ENABLED: bool = os.getenv("NOTIFICATIONS_ENABLED", "false").lower() == "true"
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM: str = os.getenv("SMTP_FROM", "crisis-alerts@localhost")
+
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:5173",
         "http://localhost:3000",

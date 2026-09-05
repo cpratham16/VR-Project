@@ -1,14 +1,24 @@
 ## Current Status
-- Active phase: B
-- Last completed iteration: B6 — Generation layer update
+- Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
+- Last completed iteration: H5 — Fix admin login (role-scoped signup, admin provisioning API, demo data & dashboard redesign)
 - Status: Complete
-- What changed: Connected the Hybrid RAG retrieval pipeline to the Groq LLM. Implemented XML-based grounding context assembly and strict `[ID]` citation validation to prevent hallucinations.
-- New/modified modules: `backend/app/services/ai_companion.py`, `backend/app/services/response_processor.py` (new), `backend/app/api/v1/chat.py`, `tests/test_generation.py`.
+- What changed:
+  - **Root causes fixed (admin login & empty dashboard):** (a) public signup accepted `role="admin"` — now rejected with 400, admins can only be created by an existing admin; (b) the seeded admin was scoped to `state="Maharashtra"` but aggregates are keyed `"City, State"`, so `region == state` matched nothing → suppressed/empty dashboard — jurisdiction matching is now suffix-aware (`region == state` OR `region ILIKE '%, state'`, applied via `_jurisdiction_filter` in all 5 analytics endpoints); (c) demo cohort was below the 10-per-region-period suppression threshold — seed now adds 10 extra patients × 5 cities.
+  - **New endpoint:** `POST /api/v1/admin/users` (`AdminCreate` schema) creates a verified admin account (201), returns `UserResponse`, 400 on duplicate email, admin-only (403 otherwise).
+  - **Seed data:** demo admin is now global (`state=None`); `seed_demo.py` adds a 50-patient extra cohort (`seed.{city}.{n}@campus.edu`/`pass123`, rotated severities); `get_or_create_user` self-heals state/city/full_name/is_verified. Demo DB was flushed and reseeded to a canonical 59 users / 10 non-suppressed region-periods (all prior test residue removed).
+  - **Admin dashboard redesigned on the Phase F design system:** `AdminDashboard.tsx` rewritten with `Card`(glass)/`Button`/`Select`/`Input`, editorial header + gold `#b8860b` chart theme and custom tooltip, graceful suppressed-state card, spike alerts, region filter, and an "Administrator Accounts" creation form wired to `POST /admin/users`.
+- New/modified modules:
+  - Backend: `app/api/v1/admin.py` (`POST /users`, `check_admin_jurisdiction` suffix-aware, `_jurisdiction_filter`), `app/api/v1/auth.py` (signup role guard), `app/schemas/user.py` (`AdminCreate`), `app/seed_demo.py`.
+  - Tests: new `tests/test_admin_login.py` (signup rejects admin, admin-create → login round-trip, duplicate 400, non-admin 403, state admin sees `"City, State"` rows); `tests/test_doctor_profile_upgrade.py` / `test_doctor_approval.py` admin helpers now provision admins via DB (signup can't create admins anymore).
+  - Frontend: `frontend/src/pages/admin/AdminDashboard.tsx` (full rewrite).
 - Key decisions made:
-  - Context Injection: System prompt now uses `<context id='doc_id'>TEXT</context>` tags to ensure the LLM understands retrieval sources.
-  - Citation Enforcement: `validate_and_strip_citations` post-processor uses regex to strip any citation `[ID]` that does not correspond to a retrieved chunk, preventing model hallucination.
-  - Integration: Chat API now resolves RAG context via `vector_store.search_hybrid` and passes it to `ai_companion_service`.
-- Dependencies added: None.
-- Verification performed: pytest full suite 49/49 pass (added `test_generation_pipeline_with_citations_and_stripping` validating citation format and halluncination-stripping).
-- Known issues / follow-ups: None.
-- Next iteration: B7 (Phase B) — Observability instrumentation
+  - Admins cannot self-register — `POST /admin/users` is the only path (matches "admin accounts must be created by an existing administrator").
+  - Jurisdiction matching uses `region == state OR region ILIKE '%, state'` (covers both `"Maharashtra"` and `"Pune, Maharashtra"` keys).
+  - Dashboard golden/gray theme pulled from Phase F tokens; mocked placeholder aggregates removed in favor of real seeded data.
+- Verification:
+  - Backend full suite: **106 passed**.
+  - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only (no new).
+  - Live: `admin@campus.edu` login → overview non-suppressed (110 patients, 5 regions, 110 screenings, 44 alerts, 28 VR, 770 moods, PHQ-9 bands populated); trend 10 rows 0 suppressed; region filter works; state-scoped admin sees only `"Bengaluru, Karnataka"` (non-suppressed); signup `role=admin` → 400; `POST /admin/users` round-trip + non-admin 403 verified against the live server.
+  - Demo DB canonical: 59 users, 10 region-periods (11 patients each), no test residue (`users` with non-`@campus.edu` = 0).
+- Known issues / follow-ups: None. Next: H6 — SAR Workshop / student panel polish (per implementation-plan-3.md).
+- Next: H6.

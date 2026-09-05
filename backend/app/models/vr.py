@@ -20,8 +20,9 @@ class VRSession(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     patient_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    doctor_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    doctor_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)  # NULL for self-initiated sessions (G7)
     scenario_id = Column(UUID(as_uuid=True), ForeignKey("vr_scenarios.id"), nullable=False)
+    source = Column(String, default="assigned", nullable=False)  # "assigned" | "self_initiated"
     intensity_level = Column(String, default="medium", nullable=False)  # "low", "medium", "high"
     duration_minutes = Column(Integer, default=10, nullable=False)
     exposure_steps = Column(Integer, default=5, nullable=False)

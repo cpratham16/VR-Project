@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '../../api/client';
 import {
@@ -123,7 +123,7 @@ export default function DoctorPatientDetail() {
       {/* Back Link */}
       <button
         onClick={() => navigate('/doctor/dashboard')}
-        className="text-xs font-medium text-teal-700 hover:text-teal-800 flex items-center space-x-1"
+        className="text-xs font-medium text-accent hover:text-teal-800 flex items-center space-x-1"
       >
         <span>← Back to Clinical Triage</span>
       </button>
@@ -132,7 +132,7 @@ export default function DoctorPatientDetail() {
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center space-x-3">
-            <h2 className="text-2xl font-bold text-gray-800">{patient.pseudonym || 'Anonymous Student'}</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{patient.pseudonym || 'Anonymous Member'}</h2>
             <span className={`px-3 py-0.5 text-xs font-semibold rounded-full border ${getRiskBadge(patient.risk_level)}`}>
               Risk: {patient.risk_level}
             </span>
@@ -189,7 +189,7 @@ export default function DoctorPatientDetail() {
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Enter clinical observations, session notes, or treatment plan updates..."
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-teal-500 focus:border-teal-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-accent focus:border-accent"
               />
               <button
                 type="submit"
@@ -211,7 +211,7 @@ export default function DoctorPatientDetail() {
                 {patient.clinical_notes.map((note) => (
                   <div key={note.id} className="py-3 space-y-1">
                     <div className="flex justify-between items-center text-xs text-gray-500">
-                      <span className="font-semibold text-teal-700">Authoring Doctor</span>
+                      <span className="font-semibold text-accent">Authoring Doctor</span>
                       <span>{new Date(note.created_at).toLocaleString()}</span>
                     </div>
                     <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded border border-gray-100">
@@ -241,7 +241,7 @@ export default function DoctorPatientDetail() {
                   </div>
                   <div className="flex items-center space-x-3">
                     <span className="text-sm text-gray-700 font-medium">Score: {s.total_score}</span>
-                    <span className="px-2.5 py-0.5 text-xs font-semibold rounded bg-teal-50 text-teal-800 border border-teal-200">
+                    <span className="px-2.5 py-0.5 text-xs font-semibold rounded bg-muted text-teal-800 border border-[#e8e4df]">
                       {s.severity_band}
                     </span>
                   </div>

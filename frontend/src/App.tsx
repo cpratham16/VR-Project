@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState, type ReactNode } from 'react';
 import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home';
@@ -18,7 +18,10 @@ import VRAssignmentPage from './pages/doctor/VRAssignmentPage';
 import DoctorPatientDetail from './pages/doctor/PatientDetail';
 import PatientAppointmentsPage from './pages/patient/AppointmentsPage';
 import DoctorAppointmentsPage from './pages/doctor/DoctorAppointments';
+import DoctorOnboarding from './pages/doctor/DoctorOnboarding';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import DoctorApprovalQueue from './pages/admin/DoctorApprovalQueue';
+import UpdateProfilePage from './pages/patient/account/UpdateProfilePage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { apiClient } from './api/client';
 
@@ -29,6 +32,18 @@ function ProtectedRoute({ children, allowedRoles }: { children: ReactNode, allow
   if (!user) return <Navigate to="/auth/login" replace />;
   if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
   
+  return children as React.ReactElement;
+}
+
+function RequireDoctorCredentials({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  if (user?.role === 'doctor') {
+    const needsUpload = !user.has_credentials;
+    const reviewStatus = user.review_status ?? (user.is_verified ? 'approved' : 'pending');
+    if (needsUpload || reviewStatus !== 'approved') {
+      return <Navigate to="/doctor/onboarding" replace />;
+    }
+  }
   return children as React.ReactElement;
 }
 
@@ -70,6 +85,13 @@ function AppContent() {
         <Route path="auth/login" element={<Login />} />
         <Route path="auth/signup" element={<Signup />} />
         
+        {/* Shared account routes */}
+        <Route path="account/profile" element={
+          <ProtectedRoute allowedRoles={['patient', 'doctor', 'admin']}>
+            <UpdateProfilePage />
+          </ProtectedRoute>
+        } />
+
         {/* Patient Panel */}
         <Route path="patient">
           {/* Un-guarded section for onboarding */}
@@ -138,29 +160,44 @@ function AppContent() {
         
         {/* Doctor Panel */}
         <Route path="doctor">
+          <Route path="onboarding" element={
+            <ProtectedRoute allowedRoles={['doctor']}>
+              <DoctorOnboarding />
+            </ProtectedRoute>
+          } />
           <Route path="dashboard" element={
             <ProtectedRoute allowedRoles={['doctor', 'admin']}>
-              <DoctorTriageDashboard />
+              <RequireDoctorCredentials>
+                <DoctorTriageDashboard />
+              </RequireDoctorCredentials>
             </ProtectedRoute>
           } />
           <Route path="moderation" element={
             <ProtectedRoute allowedRoles={['doctor', 'admin']}>
-              <ModerationQueuePage />
+              <RequireDoctorCredentials>
+                <ModerationQueuePage />
+              </RequireDoctorCredentials>
             </ProtectedRoute>
           } />
           <Route path="vr" element={
             <ProtectedRoute allowedRoles={['doctor', 'admin']}>
-              <VRAssignmentPage />
+              <RequireDoctorCredentials>
+                <VRAssignmentPage />
+              </RequireDoctorCredentials>
             </ProtectedRoute>
           } />
           <Route path="patient/:patientId" element={
             <ProtectedRoute allowedRoles={['doctor', 'admin']}>
-              <DoctorPatientDetail />
+              <RequireDoctorCredentials>
+                <DoctorPatientDetail />
+              </RequireDoctorCredentials>
             </ProtectedRoute>
           } />
           <Route path="appointments" element={
             <ProtectedRoute allowedRoles={['doctor', 'admin']}>
-              <DoctorAppointmentsPage />
+              <RequireDoctorCredentials>
+                <DoctorAppointmentsPage />
+              </RequireDoctorCredentials>
             </ProtectedRoute>
           } />
         </Route>
@@ -170,6 +207,11 @@ function AppContent() {
           <Route path="dashboard" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="doctors" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DoctorApprovalQueue />
             </ProtectedRoute>
           } />
         </Route>

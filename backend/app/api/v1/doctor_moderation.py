@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.models.user import User
 from app.models.community import CommunityPost, CommunityComment
-from app.api.deps import get_current_doctor
+from app.api.deps import get_current_doctor, get_current_verified_doctor
 from app.schemas.community import CommunityPostResponse, ModerationActionRequest
 
 router = APIRouter()
@@ -15,7 +15,7 @@ router = APIRouter()
 @router.get("/queue", response_model=List[CommunityPostResponse])
 async def get_moderation_queue(
     db: AsyncSession = Depends(get_db),
-    current_doctor: User = Depends(get_current_doctor)
+    current_doctor: User = Depends(get_current_verified_doctor)
 ):
     query = await db.execute(
         select(CommunityPost)
@@ -48,7 +48,7 @@ async def moderate_post_action(
     post_id: str,
     action_in: ModerationActionRequest,
     db: AsyncSession = Depends(get_db),
-    current_doctor: User = Depends(get_current_doctor)
+    current_doctor: User = Depends(get_current_verified_doctor)
 ):
     query = await db.execute(select(CommunityPost).where(CommunityPost.id == post_id))
     post = query.scalars().first()

@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 from app.schemas.screening import calculate_phq9_severity, calculate_gad7_severity
 
 def test_phq9_scoring():
