@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   pull_request:
     branches: [ "main" ]
 
@@ -28,6 +28,9 @@ jobs:
           --health-retries=5
     env:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/vr_mental_health
+      GROQ_API_KEY: ""
+      GEMINI_API_KEY: ""
+      EMBEDDING_PROVIDER: fastembed
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
