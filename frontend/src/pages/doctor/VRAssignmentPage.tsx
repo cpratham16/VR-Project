@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { apiClient } from '../../api/client';
 import { useNavigate } from 'react-router-dom';
 
@@ -83,14 +83,14 @@ export default function VRAssignmentPage() {
 
   const sessionStatusColor: Record<string, string> = {
     assigned: 'bg-blue-100 text-blue-700',
-    in_progress: 'bg-indigo-100 text-indigo-700',
+    in_progress: 'bg-indigo-100 text-accent',
     completed: 'bg-emerald-100 text-emerald-700',
     cancelled: 'bg-gray-200 text-gray-600',
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 px-4 py-4">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-2xl">🥽</span>
@@ -98,17 +98,17 @@ export default function VRAssignmentPage() {
           </div>
           <p className="text-sm text-gray-600 mt-1">Assign browser-based exposure therapy sessions to patients.</p>
         </div>
-        <button onClick={() => navigate('/doctor/dashboard')} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer">
+        <button onClick={() => navigate('/doctor/dashboard')} className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-xs font-semibold cursor-pointer">
           ← Back to Triage
         </button>
       </div>
 
       {loading ? (
-        <div className="bg-white p-12 rounded-2xl text-center text-gray-400 text-sm">Loading scenarios and patient data...</div>
+        <div className="bg-white p-12 rounded-lg text-center text-gray-400 text-sm">Loading scenarios and patient data...</div>
       ) : (
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Assignment Form */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-5">New VR Session Assignment</h2>
             <form onSubmit={handleAssign} className="space-y-5">
               {/* Patient */}
@@ -118,7 +118,7 @@ export default function VRAssignmentPage() {
                   required
                   value={selectedPatient}
                   onChange={(e) => setSelectedPatient(e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-white"
+                  className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm bg-white"
                 >
                   <option value="">Select a patient...</option>
                   {patients.map((p) => (
@@ -138,9 +138,9 @@ export default function VRAssignmentPage() {
                       key={s.id}
                       type="button"
                       onClick={() => setSelectedScenario(s)}
-                      className={`p-4 rounded-xl border-2 text-left transition cursor-pointer ${
+                      className={`p-4 rounded-md border-2 text-left transition cursor-pointer ${
                         selectedScenario?.id === s.id
-                          ? 'border-indigo-500 bg-indigo-50'
+                          ? 'border-indigo-500 bg-muted'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
@@ -161,7 +161,7 @@ export default function VRAssignmentPage() {
                       key={l}
                       type="button"
                       onClick={() => setIntensity(l)}
-                      className={`py-2.5 rounded-xl text-xs font-bold capitalize transition border cursor-pointer ${
+                      className={`py-2.5 rounded-md text-xs font-bold capitalize transition border cursor-pointer ${
                         intensity === l
                           ? intensityConfig[l].color
                           : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
@@ -214,12 +214,12 @@ export default function VRAssignmentPage() {
                   value={instructions}
                   onChange={(e) => setInstructions(e.target.value)}
                   placeholder="e.g. Start with 3 slow breaths. Focus on grounding before advancing to the next stage."
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               {assignMsg && (
-                <div className={`p-3 rounded-xl text-center text-xs font-semibold ${
+                <div className={`p-3 rounded-md text-center text-xs font-semibold ${
                   assignMsg.includes('success') ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' : 'bg-red-50 border border-red-200 text-red-700'
                 }`}>
                   {assignMsg}
@@ -229,7 +229,7 @@ export default function VRAssignmentPage() {
               <button
                 type="submit"
                 disabled={assigning || !selectedPatient || !selectedScenario}
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-bold shadow cursor-pointer"
+                className="w-full py-3 bg-[#1a1a1a] hover:bg-black/80 disabled:opacity-50 text-white rounded-md font-bold shadow cursor-pointer"
               >
                 {assigning ? 'Assigning...' : 'Assign VR Session'}
               </button>
@@ -237,14 +237,14 @@ export default function VRAssignmentPage() {
           </div>
 
           {/* Past Sessions */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-4">Assigned VR Sessions</h2>
             {sessions.length === 0 ? (
               <div className="text-sm text-gray-400 py-8 text-center">No VR sessions assigned yet.</div>
             ) : (
               <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
                 {sessions.map((s) => (
-                  <div key={s.id} className="p-4 rounded-xl border border-gray-100 hover:border-gray-200 transition">
+                  <div key={s.id} className="p-4 rounded-md border border-gray-100 hover:border-gray-200 transition">
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="text-sm font-bold text-gray-900">{s.scenario_name}</div>

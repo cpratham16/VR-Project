@@ -9,7 +9,9 @@ from app.models.user import User
 from app.models.vr import VRScenario, VRSession, VRTelemetry
 from app.api.deps import get_current_user
 from app.schemas.vr import (
+    VRScenarioResponse,
     VRSessionResponse,
+    VRSelfInitiateCreate,
     VRTelemetryCreate,
     VRTelemetryResponse,
     VRCompletionCreate,
@@ -23,6 +25,7 @@ def _serialize_session(session: VRSession, scenario) -> dict:
         "id": session.id,
         "patient_id": session.patient_id,
         "doctor_id": session.doctor_id,
+        "source": session.source,
         "scenario_id": session.scenario_id,
         "scenario_name": scenario.name if scenario else "",
         "scenario_slug": scenario.slug if scenario else "",
@@ -42,6 +45,45 @@ def _serialize_session(session: VRSession, scenario) -> dict:
         "started_at": session.started_at,
         "completed_at": session.completed_at,
     }
+
+@router.get("/scenarios", response_model=List[VRScenarioResponse])
+async def list_available_scenarios(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Open-access scenario catalog — patients can browse and self-initiate (G7)."""
+    query = await db.execute(select(VRScenario).where(VRScenario.is_active == True))
+    return query.scalars().all()
+
+@router.post("/self-initiate", response_model=VRSessionResponse)
+async def self_initiate_session(
+    initiate_in: VRSelfInitiateCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Patient launches any available VR module in self-guided mode, no doctor required (G7)."""
+    scenario_q = await db.execute(
+        select(VRScenario).where(VRScenario.id == initiate_in.scenario_id)
+    )
+    scenario = scenario_q.scalars().first()
+    if not scenario or not scenario.is_active:
+        raise HTTPException(status_code=404, detail="VR scenario not found")
+
+    session = VRSession(
+        patient_id=current_user.id,
+        doctor_id=None,
+        scenario_id=scenario.id,
+        source="self_initiated",
+        intensity_level=initiate_in.intensity_level,
+        duration_minutes=10,
+        exposure_steps=3,
+        instructions="Self-guided session. Go at your own pace and pause anytime.",
+        status="assigned",
+    )
+    db.add(session)
+    await db.commit()
+    await db.refresh(session)
+    return _serialize_session(session, scenario)
 
 @router.get("/assigned", response_model=List[VRSessionResponse])
 async def get_assigned_vr_sessions(

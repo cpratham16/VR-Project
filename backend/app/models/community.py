@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Boolean
 from sqlalchemy.dialects.postgresql import UUID
@@ -10,7 +10,7 @@ class CommunityPost(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    author_pseudonym = Column(String, nullable=False, default="Anonymous Student")
+    author_pseudonym = Column(String, nullable=False, default="Anonymous Member")
     category = Column(String, nullable=False, default="General Wellness")
     title = Column(String, nullable=False)
     content = Column(Text, nullable=False)
@@ -27,10 +27,14 @@ class CommunityComment(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     post_id = Column(UUID(as_uuid=True), ForeignKey("community_posts.id"), nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    author_pseudonym = Column(String, nullable=False, default="Anonymous Student")
+    author_pseudonym = Column(String, nullable=False, default="Anonymous Member")
     content = Column(Text, nullable=False)
     is_flagged = Column(Boolean, default=False, nullable=False)
     moderation_status = Column(String, default="approved", nullable=False)  # "approved", "flagged_pending", "rejected"
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    parent_id = Column(UUID(as_uuid=True), ForeignKey("community_comments.id"), nullable=True)
+    parent = relationship("CommunityComment", remote_side=[id], back_populates="replies")
+    replies = relationship("CommunityComment", back_populates="parent")
 
     post = relationship("CommunityPost", back_populates="comments")

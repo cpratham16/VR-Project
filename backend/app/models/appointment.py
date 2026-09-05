@@ -11,7 +11,12 @@ class Appointment(Base):
     patient_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     doctor_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     scheduled_at = Column(DateTime, nullable=False)
-    status = Column(String, default="requested", nullable=False)  # "requested", "confirmed", "completed", "cancelled"
+    status = Column(String, default="requested", nullable=False)  # "requested", "confirmed", "completed", "cancelled", "no_show", "waitlisted"
     reason = Column(Text, nullable=True)
+    preferred_mode = Column(String, default="any", nullable=True)  # "video_call", "in_person", "chat", "any"
+    consultation_type = Column(String, nullable=True)  # "in_person", "video_call", "chat"
+    location_notes = Column(Text, nullable=True)
+    video_room_url = Column(String, nullable=True)
+    chat_session_id = Column(UUID(as_uuid=True), ForeignKey("chat_sessions.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

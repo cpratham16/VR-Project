@@ -1,8 +1,31 @@
+import base64
+import hashlib
 import bcrypt
 from datetime import datetime, timedelta
 from typing import Any, Union
 from jose import jwt
+from cryptography.fernet import Fernet
 from app.core.config import settings
+
+def _get_fernet() -> Fernet:
+    key_bytes = hashlib.sha256(settings.SECRET_KEY.encode("utf-8")).digest()
+    fernet_key = base64.urlsafe_b64encode(key_bytes)
+    return Fernet(fernet_key)
+
+def encrypt_text(plaintext: str) -> str:
+    if not plaintext:
+        return plaintext
+    f = _get_fernet()
+    return f.encrypt(plaintext.encode("utf-8")).decode("utf-8")
+
+def decrypt_text(ciphertext: str) -> str:
+    if not ciphertext:
+        return ciphertext
+    try:
+        f = _get_fernet()
+        return f.decrypt(ciphertext.encode("utf-8")).decode("utf-8")
+    except Exception:
+        return ciphertext
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:

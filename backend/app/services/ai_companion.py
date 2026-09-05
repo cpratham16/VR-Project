@@ -12,7 +12,7 @@ from app.services.response_processor import validate_and_strip_citations
 
 logger = logging.getLogger("app.services.ai_companion")
 
-SYSTEM_PROMPT_TEMPLATE = """You are AURA, an empathetic AI Campus Mental Health Companion for university students.
+SYSTEM_PROMPT_TEMPLATE = """You are AURA, an empathetic AI Mental Health Companion for anyone seeking support.
 
 CRITICAL SAFETY & CLINICAL RULES:
 1. You are NOT a doctor, psychiatrist, or licensed therapist.
@@ -75,26 +75,31 @@ class AICompanionService:
                 messages.append({"role": "user", "content": user_message})
 
                 payload = {
-                    "model": "llama-3.3-70b-versatile",
+                    "model": "openai/gpt-oss-20b",
                     "messages": messages,
                     "temperature": 0.6,
                     "max_tokens": 300
                 }
 
-                async with httpx.AsyncClient(timeout=15.0) as client:
-                    resp = await client.post(
-                        "https://api.groq.com/openai/v1/chat/completions",
-                        json=payload,
-                        headers=headers
-                    )
-                    if resp.status_code == 200:
-                        data = await resp.json()
-                        reply = data["choices"][0]["message"]["content"].strip()
-                        # Validator: Strip hallucinated citations
-                        reply = validate_and_strip_citations(reply, valid_ids)
-                        used_rag = True
+                try:
+                    async with httpx.AsyncClient(timeout=15.0) as client:
+                        resp = await client.post(
+                            "https://api.groq.com/openai/v1/chat/completions",
+                            json=payload,
+                            headers=headers
+                        )
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            reply = data["choices"][0]["message"]["content"].strip()
+                            # Validator: Strip hallucinated citations
+                            reply = validate_and_strip_citations(reply, valid_ids)
+                            used_rag = True
+                        else:
+                            logger.error("Groq HTTP Error: %s %s", resp.status_code, resp.text)
+                except Exception as e:
+                    logger.error("Groq network/request failed: %s", e)
             except Exception as e:
-                logger.error("Groq generation failed: %s", e)
+                logger.error("Groq generation setup failed: %s", e)
                 pass
 
         if not reply:

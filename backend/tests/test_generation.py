@@ -1,5 +1,5 @@
-import pytest
-from unittest.mock import AsyncMock, patch
+﻿import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
 from app.services.ai_companion import ai_companion_service
 
 @pytest.mark.asyncio
@@ -16,10 +16,12 @@ async def test_generation_pipeline_with_citations_and_stripping():
     
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
         # Mock successful Groq response
-        mock_post.return_value.status_code = 200
-        mock_post.return_value.json.return_value = {
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
             "choices": [{"message": {"content": reply_with_hallucination}}]
         }
+        mock_post.return_value = mock_response
         
         reply, used_rag = await ai_companion_service.generate_response(
             user_message="I'm panicking",

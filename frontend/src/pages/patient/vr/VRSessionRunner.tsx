@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import 'aframe';
-import 'aframe-physics-system';
+import 'aframe-physics-system/dist/aframe-physics-system.min.js';
 import { apiClient } from '../../../api/client';
 import { useHeartRateMonitor } from '../../../components/HeartRateMonitor';
+import { createAmbience, type AmbienceHandle } from '../../../utils/vrAmbience';
 
 export interface VRASession {
   id: string;
@@ -14,6 +15,7 @@ export interface VRASession {
   exposure_steps: number;
   instructions: string;
   status: string;
+  source?: string;
   suds_pre?: number;
   suds_post?: number;
   patient_feedback?: string;
@@ -21,6 +23,7 @@ export interface VRASession {
   started_at?: string;
   completed_at?: string;
   patient_id?: string;
+  scenario_id?: string;
   doctor_id?: string;
 }
 
@@ -30,6 +33,16 @@ interface VRSessionRunnerProps {
 }
 
 type RunnerPhase = 'intro' | 'running' | 'post';
+
+export const VR_STAGE_EVENT = 'vr-stage-advance';
+
+const SLIDE_TITLES = [
+  'Stage 1 — Ground Yourself',
+  'Stage 2 — Visualize Success',
+  'Stage 3 — Breathe & Pace',
+  'Stage 4 — Project Confidence',
+  'Stage 5 — Open Discussion',
+];
 
 function mulberry32(seed: number) {
   return function () {
@@ -56,44 +69,61 @@ function buildHeightsScene(intensity: 'low' | 'medium' | 'high') {
     const color = isGlass ? '#2c3e50' : i % 3 === 1 ? '#34495e' : '#1a252f';
     const metalness = isGlass ? '0.75' : '0.15';
     const roughness = isGlass ? '0.15' : '0.85';
-    // Distant buildings sit far below the deck inside fog range: skip shadow work for GPU savings
     buildings += `<a-box position="${x.toFixed(1)} ${y.toFixed(1)} ${z.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" depth="${w.toFixed(1)}" material="color: ${color}; metalness: ${metalness}; roughness: ${roughness}"></a-box>`;
   }
 
+  // Lit window strips on the nearest towers (dusk skyline)
+  let windowStrips = '';
+  for (let i = 0; i < 12; i++) {
+    const x = (rand() - 0.5) * 60;
+    const z = -(30 + rand() * 45);
+    const baseY = -height - 2 - rand() * 10;
+    for (let s = 0; s < 3; s++) {
+      const wy = baseY + s * 3.2;
+      const wx = x + (s - 1) * 0.9;
+      windowStrips += `<a-box position="${wx.toFixed(1)} ${wy.toFixed(1)} ${z.toFixed(1)}" width="0.35" height="1.6" depth="0.35" material="color: #ffd27d; shader: flat; opacity: ${0.55 + rand() * 0.45}"></a-box>`;
+    }
+  }
+
   return `
-    <a-scene physics="debug: false; iterations: 2; tolerance: 0.001" renderer="antialias: true; physicallyCorrectLights: true; colorManagement: true; foveationLevel: 2; sortObjects: true" fog="type: linear; color: #b0c4de; near: 15; far: ${height + 130}" shadow="type: pcfsoft">
-      <a-sky color="#6ba4b8"></a-sky>
-      <a-entity light="type: ambient; intensity: 0.55; color: #e0f2fe"></a-entity>
-      <a-entity light="type: directional; intensity: 1.1; color: #fffbeb; castShadow: true; shadowMapWidth: 1024; shadowMapHeight: 1024; shadowCameraFar: 140; shadowCameraTop: 70; shadowCameraRight: 70; shadowCameraBottom: -70; shadowCameraLeft: -70; position: 15 45 20"></a-entity>
-      <a-entity light="type: hemisphere; color: #87ceeb; groundColor: #334155; intensity: 0.4"></a-entity>
-      
-      <!-- Wind Ambience -->
-      <a-sound src="https://cdn.aframe.io/sounds/wind.mp3" autoplay="true" loop="true" volume="0.2" positional="false"></a-sound>
+    <a-scene physics="debug: false; iterations: 2; tolerance: 0.001" renderer="antialias: true; colorManagement: true; foveationLevel: 2; sortObjects: true" fog="type: linear; color: #d98e5f; near: 18; far: ${height + 130}" shadow="type: pcf">
+      <a-sky color="#e8946a"></a-sky>
+
+      <a-entity light="type: ambient; intensity: 0.5; color: #ffd9b0"></a-entity>
+      <a-entity light="type: directional; intensity: 1.05; color: #ffb367; castShadow: true; shadowMapWidth: 1024; shadowMapHeight: 1024; shadowCameraFar: 140; shadowCameraTop: 70; shadowCameraRight: 70; shadowCameraBottom: -70; shadowCameraLeft: -70; position: -25 20 -60"></a-entity>
+      <a-entity light="type: hemisphere; color: #ffc490; groundColor: #334155; intensity: 0.45"></a-entity>
+
+      <!-- Dusk sun disc -->
+      <a-sphere position="-38 ${-(height - 14)} -95" radius="11" material="shader: flat; color: #ffe3ad"></a-sphere>
+      <a-sphere position="-38 ${-(height - 14)} -94.6" radius="16" material="shader: flat; color: #ff9e54; opacity: 0.25; transparent: true"></a-sphere>
 
       <a-plane static-body position="0 -${height} 0" rotation="-90 0 0" width="220" height="220" material="color: #475569; metalness: 0.2; roughness: 0.9" shadow="receive: true"></a-plane>
       <a-entity id="skyline">${buildings}</a-entity>
+      <a-entity id="window-strips">${windowStrips}</a-entity>
 
       <a-entity id="deck" position="0 0 0">
         <a-box static-body position="0 -0.5 0" width="14" height="1" depth="14" material="color: #cbd5e1; metalness: 0.35; roughness: 0.5" shadow="cast: true; receive: true"></a-box>
         <a-plane position="0 0.01 0" rotation="-90 0 0" width="14" height="14" material="color: #ffffff; opacity: 0.2; transparent: true; metalness: 0.8; roughness: 0.1"></a-plane>
         <a-box static-body position="-6.5 1 0" width="0.3" height="2.5" depth="14" material="color: #0f172a; metalness: 0.9; roughness: 0.2" shadow="cast: true; receive: true"></a-box>
         <a-box static-body position="6.5 1 0" width="0.3" height="2.5" depth="14" material="color: #0f172a; metalness: 0.9; roughness: 0.2" shadow="cast: true; receive: true"></a-box>
+        <a-box id="front-rail" static-body position="0 1 -6.5" width="13" height="2.5" depth="0.3" material="color: #0f172a; metalness: 0.9; roughness: 0.2; transparent: true; opacity: 1" shadow="cast: true; receive: true"></a-box>
         <a-box static-body position="0 1 6.5" width="13" height="2.5" depth="0.3" material="color: #0f172a; metalness: 0.9; roughness: 0.2" shadow="cast: true; receive: true"></a-box>
-        <a-box static-body position="0 1 -6.5" width="13" height="2.5" depth="0.3" material="color: #0f172a; metalness: 0.9; roughness: 0.2" shadow="cast: true; receive: true"></a-box>
-        <a-box static-body position="0 2.4 0" width="14" height="0.2" depth="14" material="color: #1e293b; metalness: 0.95; roughness: 0.1" shadow="cast: true; receive: true"></a-box>
+        <a-box position="0 2.4 0" width="14" height="0.2" depth="14" material="color: #1e293b; metalness: 0.95; roughness: 0.1" shadow="cast: true; receive: true"></a-box>
+
+        <!-- Hazard striping near the edge -->
+        <a-plane position="0 0.02 -6.1" rotation="-90 0 0" width="13" height="0.8" material="shader: flat; color: #facc15; opacity: 0.85"></a-plane>
+        <a-text value="CAUTION — EDGE" align="center" color="#111827" width="5" position="0 0.04 -6.1" rotation="-90 0 0"></a-text>
       </a-entity>
 
-      <a-entity id="sway-rig" animation="property: rotation; to: 0 0 0.4 0; dur: 3000; loop: true; dir: alternate; easing: easeInOutQuad">
-        <a-entity camera="userHeight: 1.6" look-controls="enabled: true">
-          <a-entity cursor="rayOrigin: mouse" raycaster="far: 100; objects: [stage-advance]" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" material="color: white; shader: flat" position="0 0 -1">
-            <a-animation begin="fusing" easing="ease-in" attribute="scale" fill="backwards" from="1 1 1" to="0.1 0.1 0.1" dur="1500"></a-animation>
-          </a-entity>
+      <a-entity id="sway-rig">
+        <a-entity camera look-controls="enabled: true" position="0 1.6 0">
+          <a-entity cursor="rayOrigin: mouse" raycaster="far: 100; objects: [stage-advance]" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" material="color: white; shader: flat" position="0 0 -1"></a-entity>
         </a-entity>
-        <a-entity laser-controls="hand: right" raycaster="far: 20; objects: [stage-advance]" line="color: #4f46e5; opacity: 0.7"></a-entity>
-        <a-entity laser-controls="hand: left" raycaster="far: 20; objects: [stage-advance]" line="color: #4f46e5; opacity: 0.7"></a-entity>
+        <a-entity laser-controls="hand: right" raycaster="far: 20; objects: [stage-advance]" line="color: #d4a84b; opacity: 0.7"></a-entity>
+        <a-entity laser-controls="hand: left" raycaster="far: 20; objects: [stage-advance]" line="color: #d4a84b; opacity: 0.7"></a-entity>
       </a-entity>
 
-      <a-entity stage-advance position="0 0.5 -4" geometry="primitive: box; width: 3; height: 0.8; depth: 0.1" material="color: #4f46e5; opacity: 0.85; transparent: true" class="clickable">
+      <a-entity stage-advance position="0 0.5 -4" geometry="primitive: box; width: 3; height: 0.8; depth: 0.1" material="color: #b8860b; opacity: 0.85; transparent: true">
         <a-text value="Advance Stage →" align="center" color="#ffffff" width="4" position="0 0 0.06"></a-text>
       </a-entity>
     </a-scene>
@@ -115,25 +145,36 @@ function buildLectureScene(intensity: 'low' | 'medium' | 'high') {
       const x = (i - (perRow - 1) / 2) * 2.2;
       const headColor = ['#d9b8a0', '#c9a184', '#e5c6a8', '#b98d6e', '#f0d0b5'][Math.floor(rand() * 5)];
       const bodyColor = ['#1e293b', '#334155', '#475569', '#0f172a', '#1e1b4b'][Math.floor(rand() * 5)];
+      const swayDur = Math.round(2400 + rand() * 1600);
+      const swayDelay = Math.round(rand() * 1800);
+      const swayDir = rand() > 0.5 ? 6 : -6;
       audience += `
         <a-entity position="${x.toFixed(2)} 0 ${z.toFixed(1)}">
           <a-box position="0 0.55 0" width="0.7" height="1.1" depth="0.5" material="color:${bodyColor}; roughness: 0.85; metalness: 0.05" shadow="cast: true; receive: true"></a-box>
-          <a-sphere position="0 1.45 0" radius="0.28" material="color:${headColor}; roughness: 0.7; metalness: 0.0" shadow="cast: true"></a-sphere>
+          <a-sphere position="0 1.45 0" radius="0.28" material="color:${headColor}; roughness: 0.7; metalness: 0.0" shadow="cast: true"
+            animation="property: rotation; to: 0 ${swayDir} 0; dur: ${swayDur}; dir: alternate; loop: true; delay: ${swayDelay}; easing: easeInOutSine"></a-sphere>
         </a-entity>`;
       placed++;
     }
     row++;
   }
 
+  let phoneGlows = '';
+  for (let i = 0; i < 6; i++) {
+    const px = (rand() - 0.5) * 12;
+    const pz = -7 - rand() * 10;
+    phoneGlows += `<a-plane position="${px.toFixed(2)} 0.75 ${pz.toFixed(1)}" rotation="-65 0 0" width="0.16" height="0.28" material="shader: flat; color: #9ecbff; opacity: 0.9" visible="false"></a-plane>`;
+  }
+
   const audienceScale = intensity === 'high' ? '1' : intensity === 'medium' ? '0.85' : '0.6';
   const chatterText = intensity === 'high' ? 'Crowd murmurs softly' : intensity === 'medium' ? 'A few people chatting' : 'Empty hall, quiet';
 
   return `
-    <a-scene physics="debug: false; iterations: 2; tolerance: 0.001" renderer="antialias: true; physicallyCorrectLights: true; colorManagement: true; foveationLevel: 2; sortObjects: true" fog="type: linear; color: #1e293b; near: 12; far: 65" shadow="type: pcfsoft">
+    <a-scene physics="debug: false; iterations: 2; tolerance: 0.001" renderer="antialias: true; colorManagement: true; foveationLevel: 2; sortObjects: true" fog="type: linear; color: #1e293b; near: 12; far: 65" shadow="type: pcf">
       <a-sky color="#0f172a"></a-sky>
-      <a-entity light="type: ambient; intensity: 0.4; color: #cbd5e1"></a-entity>
-      <a-entity light="type: directional; intensity: 0.8; color: #fef08a; castShadow: true; shadowMapWidth: 1024; shadowMapHeight: 1024; shadowCameraFar: 80; position: -4 14 6"></a-entity>
-      <a-entity light="type: spot; intensity: 1.6; color: #ffffff; angle: 40; penumbra: 0.4; position: 0 7 1; target: #podium" shadow="cast: true"></a-entity>
+      <a-entity id="ambient-light" light="type: ambient; intensity: 0.4; color: #cbd5e1"></a-entity>
+      <a-entity id="key-light" light="type: directional; intensity: 0.8; color: #fef08a; castShadow: true; shadowMapWidth: 1024; shadowMapHeight: 1024; shadowCameraFar: 80; position: -4 14 6"></a-entity>
+      <a-entity id="spot-light" light="type: spot; intensity: 1.6; color: #ffffff; angle: 40; penumbra: 0.4; position: 0 7 1; target: #podium" shadow="cast: true"></a-entity>
 
       <a-box static-body position="0 -0.5 -4" width="32" height="1" depth="26" material="color: #334155; roughness: 0.8; metalness: 0.15" shadow="receive: true"></a-box>
       <a-box static-body position="0 3 -12" width="36" height="12" depth="1" material="color: #1e293b; roughness: 0.95; metalness: 0.05" shadow="receive: true"></a-box>
@@ -146,26 +187,25 @@ function buildLectureScene(intensity: 'low' | 'medium' | 'high') {
         </a-entity>
       </a-entity>
 
-      <a-plane position="0 3.2 -10.2" width="9" height="5" material="color: #38bdf8; emissive: #0284c7; emissiveIntensity: 0.25; roughness: 0.3" shadow="receive: true"></a-plane>
-      <a-text position="0 4.3 -10.1" value="Welcome" color="#f8fafc" width="8" align="center"></a-text>
-      <a-text position="0 3.5 -10.1" value="${chatterText}" color="#e2e8f0" width="8" align="center"></a-text>
+      <a-cone id="projector-beam" position="0 3.6 -6.2" rotation="-22 0 0" radius-bottom="3.4" radius-top="0.12" height="5.5" open-ended="true" material="shader: flat; color: #e0f2fe; opacity: 0.09; transparent: true; side: double"
+        animation="property: material.opacity; to: 0.14; dir: alternate; dur: 900; loop: true; easing: easeInOutSine"></a-cone>
 
-      <!-- Spatial Audios -->
-      <a-sound id="crowd-murmur" src="https://cdn.aframe.io/sounds/crowd.mp3" autoplay="true" loop="true" volume="${intensity === 'high' ? '0.8' : intensity === 'medium' ? '0.4' : '0.1'}" positional="true" position="0 0 -5"></a-sound>
+      <a-plane position="0 3.2 -10.2" width="9" height="5" material="color: #38bdf8; emissive: #0284c7; emissiveIntensity: 0.25; roughness: 0.3" shadow="receive: true"></a-plane>
+      <a-text id="slide-title" position="0 4.3 -10.1" value="${SLIDE_TITLES[0]}" color="#f8fafc" width="8" align="center"></a-text>
+      <a-text position="0 3.5 -10.1" value="${chatterText}" color="#e2e8f0" width="8" align="center"></a-text>
 
       <a-entity id="audience" scale="${audienceScale} ${audienceScale} ${audienceScale}">
         ${audience}
+        ${phoneGlows}
       </a-entity>
 
-      <a-entity camera="userHeight: 1.6" position="0 0 4" look-controls="enabled: true">
-        <a-entity cursor="rayOrigin: mouse" raycaster="far: 100; objects: [stage-advance]" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" material="color: white; shader: flat" position="0 0 -1">
-          <a-animation begin="fusing" easing="ease-in" attribute="scale" fill="backwards" from="1 1 1" to="0.1 0.1 0.1" dur="1500"></a-animation>
-        </a-entity>
+      <a-entity camera look-controls="enabled: true" position="0 1.6 4">
+        <a-entity cursor="rayOrigin: mouse" raycaster="far: 100; objects: [stage-advance]" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" material="color: white; shader: flat" position="0 0 -1"></a-entity>
       </a-entity>
-      <a-entity laser-controls="hand: right" raycaster="far: 20; objects: [stage-advance]" line="color: #4f46e5; opacity: 0.7"></a-entity>
-      <a-entity laser-controls="hand: left" raycaster="far: 20; objects: [stage-advance]" line="color: #4f46e5; opacity: 0.7"></a-entity>
+      <a-entity laser-controls="hand: right" raycaster="far: 20; objects: [stage-advance]" line="color: #d4a84b; opacity: 0.7"></a-entity>
+      <a-entity laser-controls="hand: left" raycaster="far: 20; objects: [stage-advance]" line="color: #d4a84b; opacity: 0.7"></a-entity>
 
-      <a-entity stage-advance position="0 1.4 -3" geometry="primitive: box; width: 3; height: 0.7; depth: 0.1" material="color: #4f46e5; opacity: 0.85; transparent: true" class="clickable">
+      <a-entity stage-advance position="0 1.4 -3" geometry="primitive: box; width: 3; height: 0.7; depth: 0.1" material="color: #b8860b; opacity: 0.85; transparent: true">
         <a-text value="Advance Stage →" align="center" color="#ffffff" width="4" position="0 0 0.06"></a-text>
       </a-entity>
     </a-scene>
@@ -176,6 +216,13 @@ function computeStressIndex(hr: number, hrv: number): number {
   const hrC = Math.max(0, Math.min(100, (hr - 60) * 1.4));
   const hrvC = Math.max(0, Math.min(100, (60 - hrv) * 1.2));
   return Math.round(hrC * 0.55 + hrvC * 0.45);
+}
+
+declare global {
+  interface Window {
+    __vrApplyStage?: (stage: number) => void;
+    __vrApplyAmbience?: (levels: { wind: number | null; murmur: number | null }) => void;
+  }
 }
 
 export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProps) {
@@ -193,11 +240,18 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
   const { status, heartRate, hrvRmssd, deviceName, connect, disconnect } = useHeartRateMonitor();
   const telemetryTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const ambienceRef = useRef<AmbienceHandle | null>(null);
 
   const totalSeconds = session.duration_minutes * 60;
 
   const stageRef = useRef(stage);
   stageRef.current = stage;
+  const hrRef = useRef(heartRate);
+  hrRef.current = heartRate;
+  const hrvRef = useRef(hrvRmssd);
+  hrvRef.current = hrvRmssd;
+
+  const mode: 'heights' | 'lecture' = session.scenario_slug === 'public_speaking' ? 'lecture' : 'heights';
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).AFRAME && !(window as any).__vr_components_registered) {
@@ -205,29 +259,100 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
       (window as any).AFRAME.registerComponent('stage-advance', {
         init: function () {
           this.el.addEventListener('click', () => {
-            this.el.sceneEl?.emit('vr-stage-advance');
+            this.el.sceneEl?.emit(VR_STAGE_EVENT, {}, true);
           });
         }
       });
-    }
 
+      (window as any).AFRAME.registerComponent('stage-director', {
+        schema: { mode: { default: 'heights' } },
+        init: function () {
+          this.stage = 1;
+          const el = this.el;
+          this.swayRig = el.querySelector('#sway-rig');
+          this.frontRail = el.querySelector('#front-rail');
+          this.slideTitle = el.querySelector('#slide-title');
+          this.phoneGlows = Array.from(el.querySelectorAll('#audience a-plane[material*="9ecbff"]'));
+          this.baseFogFar = (el.getAttribute('fog') || {}).far ?? 80;
+
+          if (this.data.mode === 'heights') {
+            this.baseZ = this.swayRig ? this.swayRig.object3D.position.z : 0;
+            this.ampX = 0.015;
+            this.ampZ = 0.03;
+            this.phaseSeed = Math.random() * 1000;
+          }
+
+          this.applyStage = (stage: number) => {
+            this.stage = stage;
+            if (this.data.mode === 'heights') {
+              this.ampZ = 0.03 + (stage - 1) * 0.09;
+              this.ampX = 0.015 + (stage - 1) * 0.03;
+              const far = Math.max(55, this.baseFogFar - (stage - 1) * 16);
+              el.setAttribute('fog', { far });
+              if (this.swayRig) {
+                const z = Math.min(4.2, (stage - 1) * 1.05);
+                this.swayRig.object3D.position.z = this.baseZ - z;
+                this.baseZOffset = z;
+              }
+              if (this.frontRail) {
+                const opacity = Math.max(0.12, 1 - (stage - 1) * 0.28);
+                this.frontRail.setAttribute('material', 'opacity', String(opacity));
+              }
+              window.__vrApplyAmbience?.({ wind: Math.min(1, 0.25 + (stage - 1) * 0.18), murmur: null });
+            } else {
+              el.querySelector('#ambient-light')?.setAttribute('light', 'intensity', String(Math.max(0.16, 0.4 - (stage - 1) * 0.07)));
+              el.querySelector('#key-light')?.setAttribute('light', 'intensity', String(Math.max(0.3, 0.8 - (stage - 1) * 0.12)));
+              el.querySelector('#spot-light')?.setAttribute('light', 'intensity', String(Math.min(2.3, 1.6 + (stage - 1) * 0.18)));
+              this.slideTitle?.setAttribute('value', SLIDE_TITLES[(stage - 1) % SLIDE_TITLES.length]);
+              this.phoneGlows.forEach((pg: any) => pg.setAttribute('visible', stage >= 2 ? 'true' : 'false'));
+              window.__vrApplyAmbience?.({ wind: null, murmur: Math.min(1, 0.2 + (stage - 1) * 0.16) });
+            }
+          };
+
+          el.addEventListener(VR_STAGE_EVENT, () => {
+            const next = this.stage >= 99 ? this.stage : this.stage + 1;
+            this.applyStage(next);
+          });
+        },
+        tick: function (t: number) {
+          if (this.data.mode !== 'heights' || !this.swayRig) return;
+          const tt = (t + this.phaseSeed) / 1400;
+          this.swayRig.object3D.rotation.z = Math.sin(tt) * this.ampZ;
+          this.swayRig.object3D.rotation.x = Math.sin(tt * 0.7 + 1.3) * this.ampX;
+        },
+      });
+
+      (window as any).__vrApplyStage = (stage: number) => {
+        const sceneEl = document.querySelector('a-scene');
+        const director = sceneEl?.querySelector('[stage-director]') as any;
+        director?.components?.['stage-director']?.applyStage?.(stage);
+      };
+    }
+  }, []);
+
+  useEffect(() => {
     if (phase !== 'running') return;
-    const sceneEl = sceneRef.current;
-    if (sceneEl) {
-      sceneEl.innerHTML =
-        session.scenario_slug === 'public_speaking'
+
+    const container = sceneRef.current;
+    if (container && container.childElementCount === 0) {
+      container.innerHTML =
+        mode === 'lecture'
           ? buildLectureScene(session.intensity_level)
           : buildHeightsScene(session.intensity_level);
 
-      const aScene = sceneEl.querySelector('a-scene');
+      const aScene = container.querySelector('a-scene');
       if (aScene) {
-        const handler = () => {
-          setInteractionCount(prev => prev + 1);
-          setStage((s) => s + 1);
-        };
-        aScene.addEventListener('vr-stage-advance', handler);
+        const directorEl = document.createElement('a-entity');
+        directorEl.setAttribute('stage-director', `mode: ${mode}`);
+        aScene.appendChild(directorEl);
       }
     }
+
+    const onAdvance = () => {
+      setInteractionCount((prev) => prev + 1);
+      setStage((s) => Math.min(s + 1, session.exposure_steps));
+    };
+    document.addEventListener(VR_STAGE_EVENT, onAdvance);
 
     const timer = setInterval(() => {
       setElapsed((e) => {
@@ -240,13 +365,13 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
     }, 1000);
 
     const telemetry = setInterval(() => {
-      const stress = computeStressIndex(heartRate, hrvRmssd);
+      const stress = computeStressIndex(hrRef.current, hrvRef.current);
       apiClient
         .post(`/patient/vr/sessions/${session.id}/telemetry`, {
-          heart_rate: heartRate,
-          hrv_rmssd: hrvRmssd,
+          heart_rate: hrRef.current,
+          hrv_rmssd: hrvRef.current,
           stress_index: stress,
-          scene_stage: stage,
+          scene_stage: stageRef.current,
         })
         .catch(() => {
           // telemetry best-effort; never block therapy flow
@@ -256,13 +381,36 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
     timerRef.current = timer;
     telemetryTimer.current = telemetry;
 
+    const amb = ambienceRef.current;
     return () => {
+      document.removeEventListener(VR_STAGE_EVENT, onAdvance);
       clearInterval(timer);
       clearInterval(telemetry);
-      if (sceneEl) sceneEl.innerHTML = '';
+      amb?.stop();
+      if (container) container.innerHTML = '';
+      if (ambienceRef.current === amb) ambienceRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'running') return;
+    (window as any).__vrApplyStage?.(stage);
+  }, [phase, stage, mode]);
+
+  const beginRunningPhase = () => {
+    if (!ambienceRef.current) {
+      ambienceRef.current = createAmbience(mode === 'lecture' ? 'murmur' : 'wind');
+      (window as any).__vrApplyAmbience = ({ wind, murmur }: { wind: number | null; murmur: number | null }) => {
+        if (wind !== null) ambienceRef.current?.setWindLevel(wind);
+        if (murmur !== null) ambienceRef.current?.setMurmurLevel(murmur);
+      };
+    }
+    setInteractionCount(0);
+    setStage(1);
+    setElapsed(0);
+    setPhase('running');
+  };
 
   const handleComplete = async (earlyExit: boolean = false) => {
     setSubmitting(true);
@@ -302,9 +450,9 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
 
       {/* Intro phase */}
       {phase === 'intro' && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 bg-gray-900 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-8 shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
+        <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-gray-900 p-6">
+          <div className="rounded-lg bg-white max-w-xl w-full p-8 shadow-2xl">
+            <div className="mb-4 flex items-center gap-3">
               <span className="text-3xl">🥽</span>
               <div>
                 <h2 className="text-xl font-bold text-gray-900">{session.scenario_name}</h2>
@@ -312,15 +460,19 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
               </div>
             </div>
 
-            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-4 text-sm text-indigo-900 space-y-2">
-              <p><strong>Doctor's instructions:</strong> {session.instructions || 'Follow the guided steps and pace yourself.'}</p>
-              <p className="text-xs text-indigo-700">
+            <div className="mb-4 space-y-2 rounded-lg border border-[#e8e4df] bg-muted p-4 text-sm text-slate-700">
+              {session.doctor_id ? (
+                <p><strong>Doctor's instructions:</strong> {session.instructions || 'Follow the guided steps and pace yourself.'}</p>
+              ) : (
+                <p><strong>Self-guided session:</strong> Go at your own pace — pause or exit anytime.</p>
+              )}
+              <p className="text-xs text-accent">
                 Session length: {session.duration_minutes} min · Exposure steps: {session.exposure_steps}
               </p>
             </div>
 
             <div className="mb-4">
-              <div className="flex justify-between text-xs font-semibold text-gray-600 mb-1">
+              <div className="mb-1 flex justify-between text-xs font-semibold text-gray-600">
                 <span>Distress NOW (SUDS 1-10)</span>
                 <span>{sudsPre}</span>
               </div>
@@ -330,14 +482,14 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
                 max={10}
                 value={sudsPre}
                 onChange={(e) => setSudsPre(Number(e.target.value))}
-                className="w-full accent-indigo-600"
+                className="w-full accent-[#b8860b]"
               />
             </div>
 
             <div className="mb-5">
               <button
                 onClick={status === 'connected' || status === 'simulated' ? disconnect : connect}
-                className={`w-full py-3 rounded-xl font-bold text-sm transition cursor-pointer ${
+                className={`w-full cursor-pointer rounded-md py-3 font-bold text-sm transition duration-200 ${
                   status === 'connected'
                     ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -345,18 +497,18 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
               >
                 {status === 'connected' ? '✓ ' + deviceName + ' — tap to disconnect' : '⌚ Connect Heart Rate Monitor (optional)'}
               </button>
-              <p className="text-center text-[11px] text-gray-400 mt-2">{statusLabel}</p>
+              <p className="mt-2 text-center text-[11px] text-gray-400">{statusLabel}</p>
             </div>
 
             <button
-              onClick={() => setPhase('running')}
-              className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg cursor-pointer"
+              onClick={beginRunningPhase}
+              className="w-full cursor-pointer rounded-md bg-accent py-3.5 font-bold text-white transition-all duration-200 hover:bg-accent-secondary motion-safe:hover:-translate-y-0.5"
             >
               Begin Session ▶
             </button>
             <button
               onClick={onExit}
-              className="w-full py-2 text-xs text-gray-500 hover:text-gray-700 mt-2 cursor-pointer"
+              className="mt-2 w-full cursor-pointer py-2 text-xs text-gray-500 hover:text-gray-700"
             >
               ← Back without starting
             </button>
@@ -366,46 +518,46 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
 
       {/* Running phase HUD */}
       {phase === 'running' && (
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-4 left-4 bg-black/70 text-white rounded-xl px-4 py-3 space-y-1 text-sm pointer-events-auto">
-            <div className="font-bold flex items-center gap-2"><span>❤️</span> Heart Rate: <span className="text-emerald-400">{Math.round(heartRate)} bpm</span></div>
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-4 top-4 space-y-1 rounded-md bg-black/70 px-4 py-3 text-sm text-white">
+            <div className="flex items-center gap-2 font-bold"><span>❤️</span> Heart Rate: <span className="text-emerald-400">{Math.round(heartRate)} bpm</span></div>
             <div className="flex items-center gap-2"><span>📈</span> HRV (RMSSD): <span className="text-cyan-300">{hrvRmssd} ms</span></div>
             <div className="flex items-center gap-2"><span>🧠</span> Stress Index: <span className={stress > 50 ? 'text-red-400' : 'text-amber-300'}>{stress}/100</span></div>
             <div className="flex items-center gap-2">⏱ Time: <span className="font-mono">{minutesLeft}:{secondsLeft.toString().padStart(2, '0')}</span></div>
             <div className="flex items-center gap-2">📋 Stage: <span className="font-mono">{stage}/{session.exposure_steps}</span></div>
           </div>
 
-          <div className="absolute top-4 right-4 flex flex-col gap-2 pointer-events-auto">
+          <div className="absolute right-4 top-4 flex flex-col gap-2 pointer-events-auto">
             <button
               onClick={() => {
                 const aScene = sceneRef.current?.querySelector('a-scene') as any;
                 if (aScene?.enterVR) aScene.enterVR();
               }}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-4 py-2 rounded-xl shadow cursor-pointer"
+              className="cursor-pointer rounded-md bg-accent px-4 py-2 text-sm font-bold text-white shadow transition-colors hover:bg-accent-secondary"
               aria-label="Enter immersive VR mode"
             >
               Enter VR
             </button>
             <button
               onClick={async () => { await handleComplete(true); onExit(); }}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold text-sm px-4 py-2 rounded-xl shadow cursor-pointer"
+              className="cursor-pointer rounded-md border border-red-800 bg-transparent px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50"
             >
               ⏹ End Session
             </button>
           </div>
 
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto">
+          <div className="pointer-events-auto absolute bottom-6 left-1/2 -translate-x-1/2">
             {stage < session.exposure_steps ? (
               <button
                 onClick={() => { setInteractionCount(c => c + 1); setStage((s) => s + 1); }}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-2xl shadow-2xl cursor-pointer"
+                className="cursor-pointer rounded-md bg-accent px-8 py-3 font-bold text-white shadow-lg transition-all duration-200 hover:bg-accent-secondary motion-safe:hover:-translate-y-0.5"
               >
                 Advance to Stage {stage + 1} →
               </button>
             ) : (
               <button
                 onClick={() => setPhase('post')}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-2xl shadow-2xl cursor-pointer"
+                className="cursor-pointer rounded-md bg-emerald-600 px-8 py-3 font-bold text-white shadow-lg transition-colors hover:bg-emerald-700"
               >
                 ✓ I completed all stages — Finish
               </button>
@@ -416,13 +568,13 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
 
       {/* Post phase */}
       {phase === 'post' && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 bg-gray-900 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Session Complete</h2>
-            <p className="text-sm text-gray-500 mb-5">How are you feeling now compared to before the exposure?</p>
+        <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-gray-900 p-6">
+          <div className="w-full max-w-lg rounded-lg bg-white p-8 shadow-2xl">
+            <h2 className="font-display text-2xl font-semibold text-foreground mb-1">Session Complete</h2>
+            <p className="mb-5 text-sm text-muted-foreground">How are you feeling now compared to before the exposure?</p>
 
             <div className="mb-4">
-              <div className="flex justify-between text-xs font-semibold text-gray-600 mb-1">
+              <div className="mb-1 flex justify-between text-xs font-semibold text-gray-600">
                 <span>Distress NOW (SUDS 1-10)</span>
                 <span>{sudsPost}</span>
               </div>
@@ -435,23 +587,23 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
                 className="w-full accent-emerald-600"
               />
               {sudsPre > sudsPost && (
-                <p className="text-xs text-emerald-600 font-medium mt-1">✓ Distress decreased since pre-session ({sudsPre} → {sudsPost})</p>
+                <p className="mt-1 text-xs font-medium text-emerald-600">✓ Distress decreased since pre-session ({sudsPre} → {sudsPost})</p>
               )}
             </div>
 
             <div className="mb-5">
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Notes for your doctor (optional)</label>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Notes for your doctor (optional)</label>
               <textarea
                 rows={3}
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
                 placeholder="What did you experience? What coping strategies helped?"
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"
               />
             </div>
 
             {exitMessage && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold mb-4">
+              <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800">
                 {exitMessage}
               </div>
             )}
@@ -459,13 +611,13 @@ export default function VRSessionRunner({ session, onExit }: VRSessionRunnerProp
             <button
               onClick={() => handleComplete(false)}
               disabled={submitting}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold shadow-lg cursor-pointer"
+              className="w-full cursor-pointer rounded-md bg-emerald-600 py-3.5 font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50"
             >
               {submitting ? 'Submitting...' : 'Submit Results'}
             </button>
             <button
               onClick={onExit}
-              className="w-full py-2 text-xs text-gray-500 hover:text-gray-700 mt-2 cursor-pointer"
+              className="mt-2 w-full cursor-pointer py-2 text-xs text-gray-500 hover:text-gray-700"
             >
               Exit
             </button>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiClient } from '../../api/client';
 import { useNavigate } from 'react-router-dom';
@@ -25,6 +25,8 @@ interface RiskAlert {
   trigger_source: string;
   details: string;
   status: string;
+  notification_count?: number;
+  notification_recipients?: (string | null)[];
   created_at: string;
 }
 
@@ -36,7 +38,6 @@ export default function DoctorTriageDashboard() {
   const [alerts, setAlerts] = useState<RiskAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isVerified, setIsVerified] = useState<boolean>(user?.is_verified || false);
 
   // Filter & Search states
   const [riskFilter, setRiskFilter] = useState<string>('all');
@@ -80,15 +81,6 @@ export default function DoctorTriageDashboard() {
     }
   };
 
-  const handleVerifySelf = async () => {
-    try {
-      const res = await apiClient.post('/doctor/verify-self');
-      setIsVerified(res.data.is_verified);
-    } catch {
-      alert('Verification failed');
-    }
-  };
-
   const getRiskBadge = (level: string) => {
     switch (level) {
       case 'High':
@@ -123,7 +115,7 @@ export default function DoctorTriageDashboard() {
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Pending Emergency Alerts Banner */}
       {alerts.length > 0 && (
-        <div className="bg-red-600 border-2 border-red-700 p-4 rounded-xl shadow-lg text-white space-y-3">
+        <div className="bg-red-600 border-2 border-red-700 p-4 rounded-md shadow-lg text-white space-y-3">
           <div className="flex items-center gap-2 font-bold text-lg">
             <span className="text-2xl animate-bounce">🚨</span>
             <span>CRITICAL RISK ALERTS ({alerts.length} Pending)</span>
@@ -135,6 +127,18 @@ export default function DoctorTriageDashboard() {
                   <span className="font-semibold text-red-100">{alert.patient_pseudonym}:</span>{' '}
                   <span className="text-sm text-white">{alert.details}</span>
                   <span className="text-xs text-red-200 ml-2">({new Date(alert.created_at).toLocaleTimeString()})</span>
+                  {!!alert.notification_count && (
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded-full bg-white/15 text-[10px] font-bold text-white">
+                        🔔 {alert.notification_count} crisis notification{alert.notification_count === 1 ? '' : 's'} dispatched
+                      </span>
+                      {(alert.notification_recipients ?? []).slice(0, 4).map((r, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded-full bg-black/20 text-[10px] text-red-100 truncate max-w-[220px]">
+                          {r}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => handleAcknowledgeAlert(alert.id)}
@@ -154,7 +158,7 @@ export default function DoctorTriageDashboard() {
         <div>
           <div className="flex items-center space-x-3">
             <h2 className="text-2xl font-bold text-gray-800">Clinical Triage Dashboard</h2>
-            {isVerified ? (
+            {user?.is_verified ? (
               <span className="px-2.5 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-800 rounded-full border border-emerald-300">
                 ✓ Verified Clinical Staff
               </span>
@@ -164,13 +168,13 @@ export default function DoctorTriageDashboard() {
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-600 mt-1">Real-time prioritized clinical view of campus students and risk alerts.</p>
+          <p className="text-sm text-gray-600 mt-1">Real-time prioritized clinical view of your patients and risk alerts.</p>
         </div>
 
         <div className="flex space-x-2">
           <button
             onClick={() => navigate('/doctor/appointments')}
-            className="px-4 py-2 text-sm text-teal-700 bg-teal-50 border border-teal-200 rounded-md hover:bg-teal-100 transition font-medium"
+            className="px-4 py-2 text-sm text-accent bg-muted border border-[#e8e4df] rounded-md hover:bg-teal-100 transition font-medium"
           >
             Counseling Schedule Queue
           </button>
@@ -182,21 +186,6 @@ export default function DoctorTriageDashboard() {
           </button>
         </div>
       </div>
-
-      {/* Verification Warning (if not verified) */}
-      {!isVerified && (
-        <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div className="text-sm text-amber-900">
-            <strong className="font-semibold">Account Unverified:</strong> Clinical verification is required to perform treatment overrides and full patient management.
-          </div>
-          <button
-            onClick={handleVerifySelf}
-            className="px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 transition"
-          >
-            Verify Account (Demo Mode)
-          </button>
-        </div>
-      )}
 
       {/* Triage Summary Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -228,7 +217,7 @@ export default function DoctorTriageDashboard() {
               onClick={() => setRiskFilter(f)}
               className={`px-3 py-1 text-xs font-medium rounded-full border transition capitalize ${
                 riskFilter === f
-                  ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
+                  ? 'bg-accent text-white border-teal-600 shadow-sm'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
             >
@@ -243,7 +232,7 @@ export default function DoctorTriageDashboard() {
             placeholder="Search patient pseudonym/email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 rounded-md text-xs w-full sm:w-64 focus:ring-teal-500 focus:border-teal-500"
+            className="px-3 py-1.5 border border-gray-300 rounded-md text-xs w-full sm:w-64 focus:ring-accent focus:border-accent"
           />
 
           <select
@@ -283,7 +272,7 @@ export default function DoctorTriageDashboard() {
                 {filteredPatients.map((patient) => (
                   <tr key={patient.user_id} className="hover:bg-gray-50 transition">
                     <td className="px-6 py-4 font-medium text-gray-900">
-                      <div>{patient.pseudonym || 'Anonymous Student'}</div>
+                      <div>{patient.pseudonym || 'Anonymous Member'}</div>
                       <div className="text-xs text-gray-400 font-normal">{patient.email}</div>
                     </td>
                     <td className="px-6 py-4">
@@ -322,7 +311,7 @@ export default function DoctorTriageDashboard() {
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => navigate(`/doctor/patient/${patient.user_id}`)}
-                        className="px-3 py-1.5 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded text-xs font-medium transition border border-teal-200"
+                        className="px-3 py-1.5 bg-muted text-accent hover:bg-teal-100 rounded text-xs font-medium transition border border-[#e8e4df]"
                       >
                         View Patient Context
                       </button>

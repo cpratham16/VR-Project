@@ -15,5 +15,8 @@ class User(Base):
     is_verified = Column(Boolean, default=False)  # Important for doctors later
     state = Column(String, nullable=True)
     city = Column(String, nullable=True)
+    full_name = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    emergency_contact_phone = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

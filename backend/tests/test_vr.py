@@ -1,13 +1,13 @@
-import pytest
+﻿import pytest
 from app.services.vr_engine import calculate_stress_index
 
 def test_stress_index_low_hr_low_hrv():
-    """Resting state: low HR, healthy HRV → low stress."""
+    """Resting state: low HR, healthy HRV â†’ low stress."""
     idx = calculate_stress_index(heart_rate=65, hrv_rmssd=60)
     assert 0 <= idx <= 20
 
 def test_stress_index_high_hr_low_hrv():
-    """Elevated HR with low HRV → high stress."""
+    """Elevated HR with low HRV â†’ high stress."""
     idx = calculate_stress_index(heart_rate=110, hrv_rmssd=15)
     assert idx >= 60
 

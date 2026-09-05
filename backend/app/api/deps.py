@@ -50,6 +50,20 @@ async def get_current_doctor(
         )
     return current_user
 
+
+async def get_current_verified_doctor(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_doctor)
+) -> User:
+    """Doctors must be admin-approved (is_verified) for clinical actions.
+    Admins bypass. Unverified doctors receive 403 DOCTOR_PENDING_REVIEW."""
+    if current_user.role == "doctor" and not current_user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="DOCTOR_PENDING_REVIEW: Your credentials are awaiting administrator approval",
+        )
+    return current_user
+
 async def get_current_admin(
     current_user: User = Depends(get_current_user)
 ) -> User:

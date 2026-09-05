@@ -1,4 +1,4 @@
-"""Auth & access-control test pass (PRD Iteration 14).
+﻿"""Auth & access-control test pass (PRD Iteration 14).
 
 Verifies role-based access control boundaries at the dependency layer and
 the API contract, without requiring a live database:

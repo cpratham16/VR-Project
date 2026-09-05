@@ -21,10 +21,15 @@ class VRAssignmentCreate(BaseModel):
     exposure_steps: int = Field(default=5, ge=2, le=10)
     instructions: str = Field(default="", max_length=1000)
 
+class VRSelfInitiateCreate(BaseModel):
+    scenario_id: UUID
+    intensity_level: str = Field(default="low", pattern="^(low|medium|high)$")
+
 class VRSessionResponse(BaseModel):
     id: UUID
     patient_id: UUID
-    doctor_id: UUID
+    doctor_id: Optional[UUID] = None
+    source: str = "assigned"
     scenario_id: UUID
     scenario_name: str = ""
     scenario_slug: str = ""

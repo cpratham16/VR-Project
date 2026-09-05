@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 from app.services.ranking import ranking_service
 
 def test_rrf_fusion_logic():

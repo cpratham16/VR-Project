@@ -8,6 +8,7 @@ from app.core.database import get_db
 from app.models.user import User
 from app.models.mood import MoodEntry
 from app.api.deps import get_current_user
+from app.core.security import encrypt_text, decrypt_text
 from app.schemas.mood import MoodEntryCreate, MoodEntryUpdate, MoodEntryResponse
 
 router = APIRouter()
@@ -18,17 +19,21 @@ async def create_mood_entry(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    raw_journal = entry_in.journal_text
+    encrypted_journal = encrypt_text(raw_journal) if raw_journal else None
+
     db_entry = MoodEntry(
         user_id=current_user.id,
         mood_score=entry_in.mood_score,
         tags=entry_in.tags,
-        journal_text=entry_in.journal_text
+        journal_text=encrypted_journal
     )
     db.add(db_entry)
     await db.commit()
     await db.refresh(db_entry)
     
     resp = MoodEntryResponse.model_validate(db_entry)
+    resp.journal_text = raw_journal
     resp.can_edit = True
     return resp
 
@@ -53,6 +58,7 @@ async def get_mood_history(
     results = []
     for e in entries:
         item = MoodEntryResponse.model_validate(e)
+        item.journal_text = decrypt_text(e.journal_text) if e.journal_text else None
         # Edit window: 24 hours
         item.can_edit = (now - e.created_at) <= timedelta(hours=24)
         results.append(item)
@@ -85,12 +91,13 @@ async def update_mood_entry(
     if entry_in.tags is not None:
         db_entry.tags = entry_in.tags
     if entry_in.journal_text is not None:
-        db_entry.journal_text = entry_in.journal_text
+        db_entry.journal_text = encrypt_text(entry_in.journal_text)
         
     db_entry.updated_at = now
     await db.commit()
     await db.refresh(db_entry)
     
     resp = MoodEntryResponse.model_validate(db_entry)
+    resp.journal_text = decrypt_text(db_entry.journal_text) if db_entry.journal_text else None
     resp.can_edit = True
     return resp

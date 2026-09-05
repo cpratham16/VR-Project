@@ -19,6 +19,9 @@ dist/
 .env
 *.env.local
 
+# Uploaded credential documents (PII — never commit)
+backend/uploads/
+
 # IDE & OS
 .vscode/
 .idea/

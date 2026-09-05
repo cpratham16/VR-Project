@@ -7,7 +7,7 @@ from sqlalchemy.future import select
 from app.core.database import get_db
 from app.models.user import User
 from app.models.vr import VRScenario, VRSession, VRTelemetry
-from app.api.deps import get_current_doctor
+from app.api.deps import get_current_doctor, get_current_verified_doctor
 from app.schemas.vr import (
     VRScenarioResponse,
     VRAssignmentCreate,
@@ -23,6 +23,7 @@ def _serialize_session(session: VRSession, scenario: Optional[VRScenario]) -> di
         "id": session.id,
         "patient_id": session.patient_id,
         "doctor_id": session.doctor_id,
+        "source": session.source,
         "scenario_id": session.scenario_id,
         "scenario_name": scenario.name if scenario else "",
         "scenario_slug": scenario.slug if scenario else "",
@@ -43,7 +44,7 @@ def _serialize_session(session: VRSession, scenario: Optional[VRScenario]) -> di
 @router.get("/scenarios", response_model=List[VRScenarioResponse])
 async def list_vr_scenarios(
     db: AsyncSession = Depends(get_db),
-    current_doctor: User = Depends(get_current_doctor),
+    current_doctor: User = Depends(get_current_verified_doctor),
 ):
     query = await db.execute(select(VRScenario).where(VRScenario.is_active == True))
     return query.scalars().all()
@@ -52,7 +53,7 @@ async def list_vr_scenarios(
 async def assign_vr_session(
     assign_in: VRAssignmentCreate,
     db: AsyncSession = Depends(get_db),
-    current_doctor: User = Depends(get_current_doctor),
+    current_doctor: User = Depends(get_current_verified_doctor),
 ):
     # Validate patient exists and is a patient role
     patient_q = await db.execute(select(User).where(User.id == assign_in.patient_id))
@@ -86,7 +87,7 @@ async def assign_vr_session(
 async def list_patient_vr_sessions(
     patient_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_doctor: User = Depends(get_current_doctor),
+    current_doctor: User = Depends(get_current_verified_doctor),
 ):
     query = select(VRSession)
     if patient_id:
@@ -107,7 +108,7 @@ async def list_patient_vr_sessions(
 async def get_session_telemetry(
     session_id: str,
     db: AsyncSession = Depends(get_db),
-    current_doctor: User = Depends(get_current_doctor),
+    current_doctor: User = Depends(get_current_verified_doctor),
 ):
     result = await db.execute(
         select(VRTelemetry)
@@ -121,7 +122,7 @@ async def cancel_vr_session(
     session_id: str,
     cancel_in: VRAssignmentCancel,
     db: AsyncSession = Depends(get_db),
-    current_doctor: User = Depends(get_current_doctor),
+    current_doctor: User = Depends(get_current_verified_doctor),
 ):
     query = await db.execute(select(VRSession).where(VRSession.id == session_id))
     session = query.scalars().first()

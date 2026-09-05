@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 from qdrant_client import QdrantClient
 
 from app.services.embeddings import _build_provider, reset_provider

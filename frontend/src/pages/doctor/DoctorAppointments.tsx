@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../api/client';
 
@@ -73,16 +73,16 @@ export default function DoctorAppointmentsPage() {
       {/* Back Link */}
       <button
         onClick={() => navigate('/doctor/dashboard')}
-        className="text-xs font-medium text-teal-700 hover:text-teal-800 flex items-center space-x-1"
+        className="text-xs font-medium text-accent hover:text-teal-800 flex items-center space-x-1"
       >
-        <span>← Back to Clinical Triage</span>
+        <span>â† Back to Clinical Triage</span>
       </button>
 
       {/* Title */}
       <div className="bg-white p-6 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Counseling Schedule & Queue</h2>
-          <p className="text-sm text-gray-600 mt-1">Review student appointment requests and confirm consultation times.</p>
+          <p className="text-sm text-gray-600 mt-1">Review incoming appointment requests and confirm consultation times.</p>
         </div>
 
         {/* Filter */}
@@ -118,7 +118,7 @@ export default function DoctorAppointmentsPage() {
                 <div className="space-y-1">
                   <div className="flex items-center space-x-3">
                     <span className="font-semibold text-gray-900 text-base">
-                      {appt.patient_pseudonym || 'Anonymous Student'}
+                      {appt.patient_pseudonym || 'Anonymous Member'}
                     </span>
                     <span className="text-xs text-gray-400">({appt.patient_email})</span>
                     <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border capitalize ${getStatusBadge(appt.status)}`}>

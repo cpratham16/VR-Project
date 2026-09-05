@@ -1,4 +1,4 @@
-from typing import List, Optional
+﻿from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -73,7 +73,7 @@ async def create_community_post(
     # Fetch patient pseudonym
     p_query = await db.execute(select(PatientProfile).where(PatientProfile.user_id == current_user.id))
     patient = p_query.scalars().first()
-    author_pseudonym = patient.pseudonym if patient else "Anonymous Student"
+    author_pseudonym = patient.pseudonym if patient else "Anonymous Member"
 
     # Scan for distress keywords
     full_text = f"{post_in.title} {post_in.content}"
@@ -166,7 +166,7 @@ async def add_post_comment(
 
     p_query = await db.execute(select(PatientProfile).where(PatientProfile.user_id == current_user.id))
     patient = p_query.scalars().first()
-    author_pseudonym = patient.pseudonym if patient else "Anonymous Student"
+    author_pseudonym = patient.pseudonym if patient else "Anonymous Member"
 
     is_flagged, severity = risk_engine_service.scan_message_for_distress(comment_in.content)
     status = "flagged_pending" if is_flagged else "approved"
@@ -174,6 +174,7 @@ async def add_post_comment(
     db_comment = CommunityComment(
         post_id=post.id,
         user_id=current_user.id,
+        parent_id=comment_in.parent_id,
         author_pseudonym=author_pseudonym,
         content=comment_in.content.strip(),
         is_flagged=is_flagged,
