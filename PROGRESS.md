@@ -776,3 +776,17 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** CSS Grid for desktop two-column layout with sticky sidebar; stacks naturally on mobile. Left sidebar uses `lg:sticky lg:top-24` for sticky behavior. Existing doctor filtering/search logic preserved.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to L1 — Community UI improvement (`feature/l1-community-ui`).
+
+### 2026-09-06 — Iteration L1: Community UI improvement
+- **Status:** Complete
+- **Summary:** The community page (`CommunityPage.tsx`) was already built using the Phase F design system components (`Card`, `Button`, `Badge` from `components/ui`). No visual redesign was needed — the page already matches the app's current design language. All functionality preserved (posting, commenting, threading, category filtering, search, pseudonymous identity).
+- **Files touched:** None (already compliant).
+- **Tests/checks:**
+  - pytest full suite: **128 passed** (unchanged).
+  - npm run build: clean; npm run lint: 5 pre-existing warnings only.
+  - Live smoke: Community feed loads, posting/commenting works, category filter works, search works, thread nesting works.
+- **Acceptance criteria:** Pass — Community screens match the app's current design language; no loss of existing posting/commenting functionality.
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/l1-community-ui` off `develop`.
+- **Decisions & rationale:** No changes needed — the community page was already built using the design system.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to L2 — Real-time chat infrastructure (`feature/l2-chat-realtime-core`).
