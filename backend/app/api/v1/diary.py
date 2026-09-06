@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import and_, desc
+from sqlalchemy import and_, desc, or_
 
 from app.core.database import get_db
 from app.models.user import User
@@ -25,7 +25,8 @@ async def create_diary_entry(
         user_id=current_user.id,
         title=entry_in.title,
         content=entry_in.content,
-        entry_date=entry_date
+        entry_date=entry_date,
+        emotion_tag=entry_in.emotion_tag
     )
     db.add(db_entry)
     await db.commit()
@@ -36,6 +37,8 @@ async def create_diary_entry(
 async def list_diary_entries(
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
+    q: Optional[str] = Query(None, description="Search keyword in title and content"),
+    emotion_tag: Optional[str] = Query(None, description="Filter by emotion tag"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -47,6 +50,16 @@ async def list_diary_entries(
         query = query.where(DiaryEntry.entry_date >= start_date)
     if end_date:
         query = query.where(DiaryEntry.entry_date <= end_date)
+    if q:
+        search_term = f"%{q}%"
+        query = query.where(
+            or_(
+                DiaryEntry.title.ilike(search_term),
+                DiaryEntry.content.ilike(search_term)
+            )
+        )
+    if emotion_tag:
+        query = query.where(DiaryEntry.emotion_tag == emotion_tag)
     
     query = query.order_by(desc(DiaryEntry.entry_date)).limit(limit).offset(offset)
     result = await db.execute(query)
@@ -92,6 +105,8 @@ async def update_diary_entry(
         db_entry.content = entry_in.content
     if entry_in.entry_date is not None:
         db_entry.entry_date = entry_in.entry_date
+    if entry_in.emotion_tag is not None:
+        db_entry.emotion_tag = entry_in.emotion_tag
     
     db_entry.updated_at = datetime.utcnow()
     await db.commit()
