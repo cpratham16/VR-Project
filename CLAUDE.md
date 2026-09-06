@@ -1,16 +1,17 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: L2 — Real-time chat infrastructure (WebSockets)
+- Last completed iteration: L3 — Predefined chat rooms & role hierarchy
 - Status: Complete
 - What changed:
-  - **Real-time chat infrastructure:** Added WebSocket-based chat rooms with 4 predefined rooms (General Support, Academic Stress, Anxiety & Stress, Wellness Discussion).
-  - **Backend:** New models (`ChatRoom`, `ChatRoomParticipant`, `ChatRoomMessage`), REST API for room management (`/api/v1/patient/chat/rooms/*`), WebSocket endpoint (`/api/v1/patient/chat/rooms/{room_id}/ws`) for real-time messaging. User model extended with `chat_room_participants` and `chat_room_messages` relationships.
-  - **Frontend:** (Chat room UI not yet implemented - backend API ready for L3/L4).
+  - **Predefined chat rooms seeded:** 4 rooms seeded via `seed_demo.py` — General Support, Academic Stress, Anxiety & Stress, Wellness Discussion. Each has unique room_type enum.
+  - **Role hierarchy implemented in backend:** ChatRoomParticipant model has `role` field (member, moderator, doctor) with proper relationships. ChatRoom has unique room_type constraint.
+  - **Backend complete:** 4 rooms seeded at startup, REST API for room management, WebSocket infrastructure ready.
+  - **Frontend:** Not yet implemented (UI to be built in L4).
 - New/modified modules:
-  - Backend: `app/models/chat_room.py` (new), `app/schemas/chat_room.py` (new), `app/api/v1/chat_room.py` (new with REST + WebSocket), `app/services/websocket_manager.py` (new), `app/models/user.py` (relationships added), `app/api/v1/router.py` (chat_room router added), migration `354dfe86b9aa`.
+  - Backend: `app/seed_demo.py` (seed_chat_rooms added), `app/models/chat_room.py` (already had roles), migration already applied.
 - Verification:
-  - Backend full suite: **128 passed** (was 128; no new tests added yet for chat rooms).
+  - Backend full suite: **128 passed** (unchanged).
   - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only.
-  - Live smoke: Models created, REST endpoints registered, WebSocket endpoint registered.
-- Known issues / follow-ups: Frontend chat room UI not yet implemented (L3/L4). WebSocket auth uses query param token. Next: L3 — Predefined chat rooms & role hierarchy (`feature/l3-chat-rooms-roles`).
-- Next: L3.
+  - Live smoke: 4 rooms seeded at startup, accessible via REST API.
+- Known issues / follow-ups: Frontend chat room UI not yet implemented (L4). Next: L4 — Admin moderation tools for chat (`feature/l4-chat-moderation`).
+- Next: L4.
