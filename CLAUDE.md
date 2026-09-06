@@ -1,22 +1,15 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: J1 — Diary data model + entry CRUD
+- Last completed iteration: J2 — Calendar dashboard view
 - Status: Complete
 - What changed:
-  - **New Diary feature (patient-only):** Full CRUD for private diary entries with optional title, free-text content, and custom entry date. Multiple entries per day supported.
-  - **Backend:** `DiaryEntry` model (`diary_entries` table), Pydantic schemas (`DiaryEntryCreate/Update/Response`), REST endpoints (`POST/GET/PUT/DELETE /patient/diary/`) with user-scoped access, filterable list (date range, pagination), 6 new integration tests.
-  - **Frontend:** `DiaryPage.tsx` with list view, create/edit modal form, delete confirmation, entry date picker, linked in patient Sidebar (📖 icon) and routing (`/patient/diary`).
+  - **Diary Calendar view:** `DiaryPage.tsx` now has a toggleable Calendar/List view. The calendar renders a 6-week month grid with 📖 marker on days containing ≥1 entry, entry count badge for multiple entries, month navigation (Prev/Next), and today ring highlight. Clicking a date filters the list view to that date's entries. List view shows a "Entries for [date]" banner with clear filter button when a date is selected.
+  - **Enhanced UX:** New entry defaults to selected date (or today); entry date picker in form; time display in list entries.
 - New/modified modules:
-  - Backend: `app/models/diary.py`, `app/schemas/diary.py`, `app/api/v1/diary.py`, `app/models/__init__.py`, `app/api/v1/router.py`, migration `de2ccd321715`, `tests/test_diary.py` (6 tests).
-  - Frontend: `pages/patient/diary/DiaryPage.tsx`, `App.tsx` (route), `components/Sidebar.tsx` (nav link).
-- Key decisions:
-  - Patient-only feature (no doctor/admin access).
-  - No encryption for diary content (unlike mood journal) — user decision #11 for J5 privacy lock will add encryption later.
-  - Entry date separate from created_at allows back-dating entries.
-  - List supports date-range filtering for future calendar integration (J2).
+  - Frontend: `pages/patient/diary/DiaryPage.tsx` (major refactor: +Calendar view, view toggle, date filter).
 - Verification:
-  - Backend full suite: **114 passed** (was 108; +6 `test_diary.py`: create, list, get, update, delete, same-day multiple).
-  - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only.
-  - Live smoke: create → list → edit → delete round-trip works; multiple same-day entries displayed correctly.
-- Known issues / follow-ups: None. Next: J2 — Calendar dashboard view (`feature/j2-diary-calendar-view`).
-- Next: J2.
+  - Backend full suite: **114 passed** (unchanged).
+  - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing + 1 new (unused var) → fixed.
+  - Live smoke: calendar renders correctly; date click filters list; month navigation works; multiple same-day entries show count badge.
+- Known issues / follow-ups: None. Next: J3 — Search & filter (`feature/j3-diary-search`).
+- Next: J3.

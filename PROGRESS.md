@@ -678,3 +678,17 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** Patient-only feature (no doctor/admin access). No encryption yet (J5 privacy lock will add it). `entry_date` separate from `created_at` enables back-dating. List API supports date-range filtering to feed J2 calendar.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to J2 — Calendar dashboard view (`feature/j2-diary-calendar-view`).
+
+### 2026-09-06 — Iteration J2: Calendar dashboard view
+- **Status:** Complete
+- **Summary:** Added calendar view to DiaryPage with month grid, ?? markers on days with entries, entry count badges for multiple entries, month navigation (Prev/Next), today highlight ring. Clicking a date switches to List view filtered to that date's entries with a banner and clear button. New Entry defaults to selected date (or today). View toggle (List/Calendar) in header.
+- **Files touched:** frontend/src/pages/patient/diary/DiaryPage.tsx (major refactor: calendar grid, view toggle, date filter, date picker).
+- **Tests/checks:**
+  - pytest full suite: **114 passed** (backend unchanged).
+  - npm run build: clean; npm run lint: 5 pre-existing warnings only.
+  - Live smoke: calendar renders 6-week grid; date click filters list; month nav works; multi-entry days show count badge; new entry uses selected date.
+- **Acceptance criteria:** Pass — calendar correctly reflects entry data; navigating months works; clicking a marked date lists every entry from that day.
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j2-diary-calendar-view` off `develop`.
+- **Decisions & rationale:** 6-week grid (42 cells) ensures consistent height. Date click switches to list view rather than modal — keeps single-page flow. Entry count badge avoids clutter. New entry pre-fills selected date for natural workflow.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to J3 — Search & filter (`feature/j3-diary-search`).
