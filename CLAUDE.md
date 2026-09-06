@@ -1,21 +1,22 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: I2 — One-question-at-a-time flow (PHQ-9/GAD-7)
+- Last completed iteration: J1 — Diary data model + entry CRUD
 - Status: Complete
 - What changed:
-  - **Single-question assessment flow:** `ScreeningPage.tsx` no longer renders all questions at once. The questionnaire now shows exactly one question at a time (`questions[currentQ]`), a compact progress bar with "Question X of N" (accent fill, `role=progressbar`), and Previous / Next navigation — Previous is `outline` and disabled on Q1, Next becomes "Submit Assessment" (with the design-system `Button`'s spinner while submitting) on the last question. Option buttons keep the existing 2×2-on-mobile / 4-across-desktop grid.
-  - **Mid-assessment persistence:** Answers and position are saved to `sessionStorage` per instrument (`screening_draft_PHQ-9` / `screening_draft_GAD-7` as `{ answers, currentQ }`) via explicit `persistDraft` calls on select/Next/Previous — no persistence effect (which would have re-saved stale drafts after submit/reset). On load, the draft is restored with answers padded/clamped to the question count and a "Resumed your saved draft" hint. Only the submitted type's draft is cleared on successful submit; the other instrument's draft is kept (user decision #4). "Take Another Assessment" resets answers/position to a fresh -1 array and removes that type's draft.
-  - **Type switching preserved:** PHQ-9↔GAD-7 tab still refetches that instrument and independently restores its own draft; `?type=` deep-link init unchanged (from I1).
+  - **New Diary feature (patient-only):** Full CRUD for private diary entries with optional title, free-text content, and custom entry date. Multiple entries per day supported.
+  - **Backend:** `DiaryEntry` model (`diary_entries` table), Pydantic schemas (`DiaryEntryCreate/Update/Response`), REST endpoints (`POST/GET/PUT/DELETE /patient/diary/`) with user-scoped access, filterable list (date range, pagination), 6 new integration tests.
+  - **Frontend:** `DiaryPage.tsx` with list view, create/edit modal form, delete confirmation, entry date picker, linked in patient Sidebar (📖 icon) and routing (`/patient/diary`).
 - New/modified modules:
-  - Frontend: `pages/patient/screening/ScreeningPage.tsx` (refactor; +131/−41). No backend changes, no new files.
-- Key decisions made:
-  - Progress = minimal bar + "Question X of N" (Stepper is too wide for 7–9 questions on mobile).
-  - Explicit Next click (no auto-advance) for accessibility/deliberate responses.
-  - End-of-assessment validation kept (submit blocked with a message if any answer missing); per-question gating not added.
-  - Persistence done in mutation handlers rather than a `useEffect` to avoid clobbering cleared drafts after submit/reset.
+  - Backend: `app/models/diary.py`, `app/schemas/diary.py`, `app/api/v1/diary.py`, `app/models/__init__.py`, `app/api/v1/router.py`, migration `de2ccd321715`, `tests/test_diary.py` (6 tests).
+  - Frontend: `pages/patient/diary/DiaryPage.tsx`, `App.tsx` (route), `components/Sidebar.tsx` (nav link).
+- Key decisions:
+  - Patient-only feature (no doctor/admin access).
+  - No encryption for diary content (unlike mood journal) — user decision #11 for J5 privacy lock will add encryption later.
+  - Entry date separate from created_at allows back-dating entries.
+  - List supports date-range filtering for future calendar integration (J2).
 - Verification:
-  - Frontend `npm run build`: clean (0 TS errors); `npm run lint`: 5 pre-existing warnings only (no new from ScreeningPage).
-  - Acceptance walked in diff: single-question render, sessionStorage restore path (padded/clamped + resume hint), draft remove only for `selectedType` on submit; backend/schema untouched (scoring unaffected).
-  - Git: branch `feature/i2-assessment-one-at-a-time` created per 0b off `feature/i1-assessment-daily-popup`.
-- Known issues / follow-ups: None. Next: J1 — Diary data model + entry CRUD (`feature/j1-diary-crud`).
-- Next: J1.
+  - Backend full suite: **114 passed** (was 108; +6 `test_diary.py`: create, list, get, update, delete, same-day multiple).
+  - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only.
+  - Live smoke: create → list → edit → delete round-trip works; multiple same-day entries displayed correctly.
+- Known issues / follow-ups: None. Next: J2 — Calendar dashboard view (`feature/j2-diary-calendar-view`).
+- Next: J2.
