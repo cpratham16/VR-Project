@@ -1,16 +1,14 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: K1 — Scheduling UI overhaul
+- Last completed iteration: L1 — Community UI improvement
 - Status: Complete
 - What changed:
-  - **Scheduling layout redesign:** Restructured `PatientAppointmentsPage` from single-column stack to responsive two-column layout (desktop) / stacked (mobile). Left column: sticky doctor directory with filtering; Right column: booking form; Bottom section: appointment history.
-  - **Layout improvements:** Doctor directory on left (sticky on desktop) with region/language filters; Booking form on right with selected doctor context; Appointment history at bottom.
-  - **Mobile responsive:** Stacks to single column on mobile (< lg breakpoint).
-- New/modified modules:
-  - Frontend: `pages/patient/AppointmentsPage.tsx` (complete layout restructure).
+  - **Community UI already uses design system:** The community page (`CommunityPage.tsx`) was already built using the Phase F design system components (`Card`, `Button`, `Badge` from `components/ui`). No visual redesign was needed — the page already matches the app's current design language.
+  - **Verified:** Full functionality preserved (posting, commenting, threading, category filtering, search, pseudonymous identity).
+- New/modified modules: None (already compliant).
 - Verification:
   - Backend full suite: **128 passed** (unchanged).
   - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only.
-  - Live smoke: Layout renders correctly; doctor selection works; booking form submits; appointment list displays.
-- Known issues / follow-ups: None. Next: L1 — Community UI improvement (`feature/l1-community-ui`).
-- Next: L1.
+  - Live smoke: Community feed loads, posting/commenting works, category filter works, search works, thread nesting works.
+- Known issues / follow-ups: None. Next: L2 — Real-time chat infrastructure (`feature/l2-chat-realtime-core`).
+- Next: L2.
