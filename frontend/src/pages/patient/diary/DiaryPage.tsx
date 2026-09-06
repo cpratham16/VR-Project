@@ -66,6 +66,9 @@ export default function DiaryPage() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinMode, setPinMode] = useState<'verify' | 'setup' | 'change'>('verify');
   const [hasPin, setHasPin] = useState<'checking' | 'has_pin' | 'no_pin'>('checking');
+  const [reflectionEntry, setReflectionEntry] = useState<DiaryEntry | null>(null);
+  const [reflectionText, setReflectionText] = useState('');
+  const [reflectionLoading, setReflectionLoading] = useState(false);
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -170,6 +173,20 @@ export default function DiaryPage() {
       fetchEntries();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to delete entry');
+    }
+  };
+
+  const handleReflect = async (entry: DiaryEntry) => {
+    setReflectionEntry(entry);
+    setReflectionText('');
+    setReflectionLoading(true);
+    try {
+      const res = await apiClient.post(`/patient/diary/${entry.id}/reflect`);
+      setReflectionText(res.data.reflection);
+    } catch {
+      setReflectionText('Unable to generate reflection at this time. Please try again later.');
+    } finally {
+      setReflectionLoading(false);
     }
   };
 
@@ -468,6 +485,7 @@ export default function DiaryPage() {
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(entry)}>Edit</Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleReflect(entry)}>🤖 Reflect</Button>
                       <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(entry.id)}>Delete</Button>
                     </div>
                   </div>
@@ -495,6 +513,7 @@ export default function DiaryPage() {
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(entry)}>Edit</Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleReflect(entry)}>🤖 Reflect</Button>
                       <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(entry.id)}>Delete</Button>
                     </div>
                   </div>
@@ -527,6 +546,7 @@ export default function DiaryPage() {
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(entry)}>Edit</Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleReflect(entry)}>🤖 Reflect</Button>
                       <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(entry.id)}>Delete</Button>
                     </div>
                   </div>
@@ -543,6 +563,59 @@ export default function DiaryPage() {
         onVerify={handlePinVerified}
         mode={pinMode}
       />
+      {reflectionEntry && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reflection-modal-title"
+        >
+          <div className="w-full max-w-lg rounded-2xl border border-[#e8e4df] bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="flex h-11 w-11 items-center justify-center rounded-md bg-muted text-2xl"
+              >
+                🤖
+              </span>
+              <div>
+                <h2 id="reflection-modal-title" className="font-display text-xl font-bold text-foreground">
+                  AI Reflection
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  A gentle reflection on your entry
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="font-semibold text-gray-800 mb-2">{reflectionEntry.title || 'Untitled Entry'}</h3>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">{reflectionEntry.content}</p>
+            </div>
+
+            <div className="mb-4 p-4 bg-accent/5 rounded-lg border border-accent/20">
+              <p className="text-sm text-accent font-medium mb-2">AI Reflection</p>
+              {reflectionLoading ? (
+                <div className="flex items-center gap-2 text-sm text-accent">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Generating reflection...
+                </div>
+              ) : (
+                <p className="text-gray-700 whitespace-pre-wrap">{reflectionText}</p>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-2">
+              <Button variant="ghost" onClick={() => setReflectionEntry(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

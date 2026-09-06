@@ -1477,3 +1477,75 @@ async def test_diary_access_blocked_without_pin():
         assert res.status_code == 200
 
     await _delete_user_and_entries(email)
+
+# J6: AI Reflection tests
+@pytest.mark.asyncio
+async def test_reflect_on_diary_entry():
+    email = f"j6_reflect_{uuid.uuid4().hex[:6]}@test.com"
+    user = await _create_patient(email)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        login = await ac.post("/api/v1/auth/login", data={"username": email, "password": "secret123"})
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        # Create entry
+        create_res = await ac.post("/api/v1/patient/diary/", json={
+            "title": "Test Entry",
+            "content": "I had a great day today. Everything went well.",
+        }, headers=headers)
+        assert create_res.status_code == 200
+        entry_id = create_res.json()["id"]
+
+        # Request reflection
+        res = await ac.post(f"/api/v1/patient/diary/{entry_id}/reflect", headers=headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert data["entry_id"] == entry_id
+        assert "reflection" in data
+        assert isinstance(data["reflection"], str)
+        assert len(data["reflection"]) > 0
+
+    await _delete_user_and_entries(email)
+
+
+@pytest.mark.asyncio
+async def test_reflect_on_nonexistent_entry():
+    email = f"j6_reflect_none_{uuid.uuid4().hex[:6]}@test.com"
+    user = await _create_patient(email)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        login = await ac.post("/api/v1/auth/login", data={"username": email, "password": "secret123"})
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        # Try to reflect on non-existent entry
+        res = await ac.post("/api/v1/patient/diary/00000000-0000-0000-0000-000000000000/reflect", headers=headers)
+        assert res.status_code == 404
+
+    await _delete_user_and_entries(email)
+
+
+@pytest.mark.asyncio
+async def test_reflect_on_other_users_entry():
+    email1 = f"j6_reflect_user1_{uuid.uuid4().hex[:6]}@test.com"
+    email2 = f"j6_reflect_user2_{uuid.uuid4().hex[:6]}@test.com"
+    user1 = await _create_patient(email1)
+    user2 = await _create_patient(email2)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        # User 1 creates entry
+        login1 = await ac.post("/api/v1/auth/login", data={"username": email1, "password": "secret123"})
+        headers1 = {"Authorization": f"Bearer {login1.json()['access_token']}"}
+        create_res = await ac.post("/api/v1/patient/diary/", json={
+            "title": "User 1 Entry",
+            "content": "Private content",
+        }, headers=headers1)
+        entry_id = create_res.json()["id"]
+
+        # User 2 tries to reflect on user 1's entry
+        login2 = await ac.post("/api/v1/auth/login", data={"username": email2, "password": "secret123"})
+        headers2 = {"Authorization": f"Bearer {login2.json()['access_token']}"}
+        res = await ac.post(f"/api/v1/patient/diary/{entry_id}/reflect", headers=headers2)
+        assert res.status_code == 404
+
+    await _delete_user_and_entries(email1)
+    await _delete_user_and_entries(email2)

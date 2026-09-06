@@ -4,14 +4,70 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import and_, desc, or_
+import os
+import httpx
 
 from app.core.database import get_db
 from app.models.user import User
 from app.models.diary import DiaryEntry
 from app.api.deps import get_current_user
 from app.schemas.diary import DiaryEntryCreate, DiaryEntryUpdate, DiaryEntryResponse
+from app.core.config import settings
 
 router = APIRouter()
+
+# Diary AI Reflection prompt
+REFLECTION_SYSTEM_PROMPT = """You are a compassionate AI companion providing a gentle, supportive reflection on a personal diary entry. 
+
+Guidelines:
+- Be empathetic, warm, and non-judgmental
+- Offer supportive insights or gentle reframing
+- Suggest healthy coping strategies if relevant
+- Keep response to 3-5 sentences
+- Never diagnose, prescribe, or give clinical advice
+- If content suggests crisis/self-harm, gently encourage professional help
+- Respect the user's privacy - this is their personal reflection"""
+
+async def generate_diary_reflection(content: str, title: Optional[str] = None) -> str:
+    """Generate AI reflection on a diary entry using Groq API."""
+    groq_api_key = settings.GROQ_API_KEY or os.getenv("GROQ_API_KEY", "")
+    if not groq_api_key or len(groq_api_key.strip()) <= 5:
+        return "I hear you. Your thoughts and feelings matter. Take a moment to breathe and be kind to yourself today."
+
+    user_prompt = f"Diary entry"
+    if title:
+        user_prompt += f" titled '{title}'"
+    user_prompt += f":\n\n{content}\n\nPlease offer a brief, compassionate reflection."
+
+    try:
+        headers = {
+            "Authorization": f"Bearer {groq_api_key}",
+            "Content-Type": "application/json"
+        }
+        messages = [
+            {"role": "system", "content": REFLECTION_SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt}
+        ]
+        payload = {
+            "model": "openai/gpt-oss-20b",
+            "messages": messages,
+            "temperature": 0.7,
+            "max_tokens": 200
+        }
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                json=payload,
+                headers=headers
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                return data["choices"][0]["message"]["content"].strip()
+    except Exception:
+        pass
+
+    return "I hear you. Your thoughts and feelings matter. Take a moment to breathe and be kind to yourself today."
 
 @router.post("/", response_model=DiaryEntryResponse)
 async def create_diary_entry(
@@ -132,3 +188,31 @@ async def delete_diary_entry(
     await db.delete(db_entry)
     await db.commit()
     return {"message": "Diary entry deleted"}
+
+
+# J6: AI Reflection endpoint
+from pydantic import BaseModel
+
+class ReflectionResponse(BaseModel):
+    entry_id: str
+    reflection: str
+
+@router.post("/{entry_id}/reflect", response_model=ReflectionResponse)
+async def reflect_on_entry(
+    entry_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Generate AI reflection on a specific diary entry (opt-in, per-entry)."""
+    query = await db.execute(
+        select(DiaryEntry).where(
+            DiaryEntry.id == entry_id,
+            DiaryEntry.user_id == current_user.id
+        )
+    )
+    db_entry = query.scalars().first()
+    if not db_entry:
+        raise HTTPException(status_code=404, detail="Diary entry not found")
+    
+    reflection = await generate_diary_reflection(db_entry.content, db_entry.title)
+    return ReflectionResponse(entry_id=entry_id, reflection=reflection)
