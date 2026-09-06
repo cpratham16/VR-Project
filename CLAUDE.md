@@ -1,16 +1,17 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: J4 — Optional emotion tagging
+- Last completed iteration: J5 — PIN/biometric privacy lock
 - Status: Complete
 - What changed:
-  - **Visual emotion tag picker:** Replaced plain dropdown with emoji grid (10 emotions: 😊 Happy, 😌 Calm, 😢 Sad, 😰 Anxious, 😫 Stressed, 🙏 Grateful, 😠 Angry, 🤩 Excited, 😔 Lonely, 🌱 Hopeful) in entry form. "None" option to clear tag. Header filter dropdown updated with emojis.
-  - **Entry display:** Emotion badge already present from J3.
-  - **Schema/API:** Unchanged (already supported emotion_tag from J3).
+  - **Diary privacy lock:** Added optional PIN-based lock for diary access. New `diary_pin_hash` column on `User` model with migration `db488b851616`. New `/api/v1/patient/diary/privacy/` endpoints: `POST /pin` (set), `PUT /pin` (change), `DELETE /pin` (remove), `GET /pin/status` (check), `POST /pin/verify` (verify). Uses bcrypt hashing like main password.
+  - **Frontend PIN modal:** `DiaryPinModal` component with visual keypad entry, supports verify/setup/change modes. Diary page shows lock screen when PIN required and not verified. Header buttons for setup/change/remove PIN. Verification persists for session.
+  - **Database:** Added `diary_pin_hash` column to `users` table (nullable, nullable=True for optional).
 - New/modified modules:
-  - Frontend: `pages/patient/diary/DiaryPage.tsx` (EMOTION_TAGS now objects with emoji/label, visual grid picker in form, emoji in filter dropdown).
+  - Backend: `app/models/user.py` (diary_pin_hash), `app/api/v1/diary_privacy.py` (new), `app/api/v1/router.py` (register), migration `db488b851616`, `tests/test_diary.py` (+4 J5 tests: setup, change, remove, access).
+  - Frontend: `components/DiaryPinModal.tsx` (new), `pages/patient/diary/DiaryPage.tsx` (PIN gate, header buttons, modal integration).
 - Verification:
-  - Backend full suite: **117 passed** (unchanged).
+  - Backend full suite: **121 passed** (was 117; +4 J5 tests: setup, change, remove, access with PIN).
   - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only.
-  - Live smoke: Emoji grid picker works; selection persists on create/edit; filter dropdown shows emojis; badge displays on entries.
-- Known issues / follow-ups: None. Next: J5 — PIN/biometric privacy lock (`feature/j5-diary-privacy-lock`).
-- Next: J5.
+  - Live smoke: PIN setup → lock screen → verify → access works; change PIN invalidates old; remove PIN disables lock.
+- Known issues / follow-ups: Biometric (WebAuthn) not yet implemented — PIN only for now. Next: J6 — Optional AI reflection (`feature/j6-diary-ai-reflection`).
+- Next: J6.

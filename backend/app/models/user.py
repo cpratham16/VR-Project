@@ -18,5 +18,6 @@ class User(Base):
     full_name = Column(String, nullable=True)
     phone = Column(String, nullable=True)
     emergency_contact_phone = Column(String, nullable=True)
+    diary_pin_hash = Column(String, nullable=True)  # For diary privacy lock
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
