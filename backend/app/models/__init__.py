@@ -4,6 +4,7 @@ from app.models.patient import PatientProfile, ConsentRecord
 from app.models.screening import ScreeningResult
 from app.models.screening_instrument import ScreeningInstrument
 from app.models.mood import MoodEntry
+from app.models.diary import DiaryEntry
 from app.models.note import ClinicalNote
 from app.models.appointment import Appointment
 from app.models.chat import ChatSession, ChatMessage

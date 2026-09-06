@@ -664,3 +664,17 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** Mininal progress bar + "Question X of N" over the Stepper component (too wide for 7–9 questions on mobile). Explicit Next (no auto-advance) for accessibility and deliberate responses. End-of-assessment validation retained rather than per-question gating. Explicit handler-based `persistDraft` avoids the clobber bug an answers/currentQ effect would introduce after submit/reset.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to J1 — Diary data model + entry CRUD (`feature/j1-diary-crud`).
+
+### 2026-09-06 — Iteration J1: Diary data model + entry CRUD
+- **Status:** Complete
+- **Summary:** Built the Diary feature (patient-only private journal). Backend: new `DiaryEntry` model (`diary_entries` table with optional title, free-text content, custom entry_date, created_at/updated_at), Pydantic schemas (`DiaryEntryCreate/Update/Response`), REST endpoints under `/api/v1/patient/diary/` (`POST/GET/PUT/DELETE` with user-scoped access, date-range filtering, pagination), and 6 integration tests. Frontend: `DiaryPage.tsx` with list view, create/edit form in a `Card` modal, delete confirmation, datetime-local picker for entry_date, linked in patient Sidebar (?? icon) and routed at `/patient/diary` behind `RequireOnboarding` guard. Alembic migration `de2ccd321715` applied.
+- **Files touched:** backend/app/models/diary.py (new), backend/app/schemas/diary.py (new), backend/app/api/v1/diary.py (new), backend/app/models/__init__.py, backend/app/api/v1/router.py, backend/alembic/versions/de2ccd321715_add_diary_entries_table.py, backend/tests/test_diary.py (new, 6 tests); frontend/src/pages/patient/diary/DiaryPage.tsx (new), frontend/src/App.tsx, frontend/src/components/Sidebar.tsx.
+- **Tests/checks:**
+  - pytest full suite: **114 passed** (was 108; +6 diary tests — create, list, get, update, delete, multiple same-day entries).
+  - npm run build: clean (0 TS errors); npm run lint: 5 pre-existing warnings only (no new).
+  - Live smoke (alice@campus.edu): create entry ? appears in list ? edit ? changes persist ? delete ? removed; 5 entries on same day all stored and retrievable.
+- **Acceptance criteria:** Pass — user can create, edit, delete diary entries; multiple entries on the same day are all stored and retrievable independently.
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j1-diary-crud` created off `develop`.
+- **Decisions & rationale:** Patient-only feature (no doctor/admin access). No encryption yet (J5 privacy lock will add it). `entry_date` separate from `created_at` enables back-dating. List API supports date-range filtering to feed J2 calendar.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to J2 — Calendar dashboard view (`feature/j2-diary-calendar-view`).
