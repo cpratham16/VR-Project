@@ -734,3 +734,17 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** PIN-only for now (biometric/WebAuthn deferred to future); uses existing bcrypt hashing for consistency; session-based verification avoids re-entry on every navigation within session; optional feature respects user choice.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to J6 — Optional AI reflection (`feature/j6-diary-ai-reflection`).
+
+### 2026-09-06 — Iteration J6: Optional AI reflection (per-entry, opt-in)
+- **Status:** Complete
+- **Summary:** Added per-entry AI reflection feature. Backend: new `POST /api/v1/patient/diary/{entry_id}/reflect` endpoint generates a compassionate, supportive reflection using Groq `openai/gpt-oss-20b` with a supportive system prompt. Only triggered by explicit user action (opt-in, per-entry). Fallback message if API unavailable. Ownership checks: 404 for non-existent or other users' entries. Frontend: "?? Reflect" button on each entry opens modal showing entry context + AI reflection with loading spinner. Reflection only triggered by explicit user click (no auto-analysis). Fallback graceful if API unavailable.
+- **Files touched:** backend/app/api/v1/diary.py (reflection endpoint + Groq call), backend/tests/test_diary.py (+3 J6 tests); frontend/src/pages/patient/diary/DiaryPage.tsx (reflect button, modal, loading state).
+- **Tests/checks:**
+  - pytest full suite: **124 passed** (was 121; +3 J6 tests: valid reflection, non-existent 404, cross-user 404).
+  - npm run build: clean; npm run lint: 5 pre-existing warnings only.
+  - Live smoke: Reflect button works; modal shows entry + AI response; other users blocked (404); non-existent returns 404; graceful fallback if Groq unavailable.
+- **Acceptance criteria:** Pass — no entry analyzed without explicit per-entry action; no global auto-analyze setting; reflection opt-in and per-entry.
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j6-diary-ai-reflection` off `develop`.
+- **Decisions & rationale:** Groq `openai/gpt-oss-20b` for consistency with existing AI companion. System prompt emphasizes empathy, no clinical advice, crisis awareness. Fallback message ensures graceful degradation. Ownership check prevents cross-user access.
+- **Issues / blockers:** Groq API key required for full functionality (graceful fallback included).
+- **Follow-ups:** Proceed to J7 — Journaling streak tracker (`feature/j7-diary-streak`).
