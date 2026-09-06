@@ -1,14 +1,16 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: L1 — Community UI improvement
+- Last completed iteration: L2 — Real-time chat infrastructure (WebSockets)
 - Status: Complete
 - What changed:
-  - **Community UI already uses design system:** The community page (`CommunityPage.tsx`) was already built using the Phase F design system components (`Card`, `Button`, `Badge` from `components/ui`). No visual redesign was needed — the page already matches the app's current design language.
-  - **Verified:** Full functionality preserved (posting, commenting, threading, category filtering, search, pseudonymous identity).
-- New/modified modules: None (already compliant).
+  - **Real-time chat infrastructure:** Added WebSocket-based chat rooms with 4 predefined rooms (General Support, Academic Stress, Anxiety & Stress, Wellness Discussion).
+  - **Backend:** New models (`ChatRoom`, `ChatRoomParticipant`, `ChatRoomMessage`), REST API for room management (`/api/v1/patient/chat/rooms/*`), WebSocket endpoint (`/api/v1/patient/chat/rooms/{room_id}/ws`) for real-time messaging. User model extended with `chat_room_participants` and `chat_room_messages` relationships.
+  - **Frontend:** (Chat room UI not yet implemented - backend API ready for L3/L4).
+- New/modified modules:
+  - Backend: `app/models/chat_room.py` (new), `app/schemas/chat_room.py` (new), `app/api/v1/chat_room.py` (new with REST + WebSocket), `app/services/websocket_manager.py` (new), `app/models/user.py` (relationships added), `app/api/v1/router.py` (chat_room router added), migration `354dfe86b9aa`.
 - Verification:
-  - Backend full suite: **128 passed** (unchanged).
+  - Backend full suite: **128 passed** (was 128; no new tests added yet for chat rooms).
   - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only.
-  - Live smoke: Community feed loads, posting/commenting works, category filter works, search works, thread nesting works.
-- Known issues / follow-ups: None. Next: L2 — Real-time chat infrastructure (`feature/l2-chat-realtime-core`).
-- Next: L2.
+  - Live smoke: Models created, REST endpoints registered, WebSocket endpoint registered.
+- Known issues / follow-ups: Frontend chat room UI not yet implemented (L3/L4). WebSocket auth uses query param token. Next: L3 — Predefined chat rooms & role hierarchy (`feature/l3-chat-rooms-roles`).
+- Next: L3.
