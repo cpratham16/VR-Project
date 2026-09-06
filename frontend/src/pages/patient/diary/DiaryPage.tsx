@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { apiClient } from '../../../api/client';
 import { Card, Button, Input, Textarea } from '../../../components/ui';
+import DiaryPinModal from '../../../components/DiaryPinModal';
 
 interface DiaryEntry {
   id: string;
@@ -34,6 +35,16 @@ const EMOTION_TAGS = [
   { value: 'hopeful', label: 'Hopeful', emoji: '🌱' },
 ];
 
+const formatDate = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const formatTime = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+};
+
 export default function DiaryPage() {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,6 +62,10 @@ export default function DiaryPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [emotionFilter, setEmotionFilter] = useState('');
+  const [pinVerified, setPinVerified] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinMode, setPinMode] = useState<'verify' | 'setup' | 'change'>('verify');
+  const [hasPin, setHasPin] = useState<'checking' | 'has_pin' | 'no_pin'>('checking');
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -70,7 +85,46 @@ export default function DiaryPage() {
 
   useEffect(() => {
     fetchEntries();
+    checkPinStatus();
   }, [fetchEntries]);
+
+  const checkPinStatus = async () => {
+    try {
+      const res = await apiClient.get('/patient/diary/privacy/pin/status');
+      setHasPin(res.data.has_pin ? 'has_pin' : 'no_pin');
+      if (!res.data.has_pin) {
+        setPinVerified(true);
+      }
+    } catch {
+      setHasPin('has_pin');
+    }
+  };
+
+  const handlePinVerified = () => {
+    setPinVerified(true);
+    setShowPinModal(false);
+  };
+
+  const handleSetupPin = () => {
+    setPinMode('setup');
+    setShowPinModal(true);
+  };
+
+  const handleChangePin = () => {
+    setPinMode('change');
+    setShowPinModal(true);
+  };
+
+  const handleRemovePin = async () => {
+    if (!window.confirm('Remove diary PIN protection?')) return;
+    try {
+      await apiClient.delete('/patient/diary/privacy/pin');
+      setHasPin('no_pin');
+      setPinVerified(true);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to remove PIN');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,16 +181,6 @@ export default function DiaryPage() {
     setShowForm(true);
   };
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const formatTime = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  };
-
   const getEntriesForDate = (date: Date) => {
     const dateStr = date.toISOString().slice(0, 10);
     return entries.filter(e => e.entry_date.slice(0, 10) === dateStr);
@@ -147,11 +191,10 @@ export default function DiaryPage() {
     const month = calendarMonth.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    const startDay = firstDay.getDay(); // 0 = Sunday
+    const startDay = firstDay.getDay();
     const daysInMonth = lastDay.getDate();
     const days = [];
 
-    // Previous month trailing days
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = startDay - 1; i >= 0; i--) {
       const day = prevMonthLastDay - i;
@@ -159,13 +202,11 @@ export default function DiaryPage() {
       days.push({ date: d, isCurrentMonth: false });
     }
 
-    // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
       const d = new Date(year, month, day);
       days.push({ date: d, isCurrentMonth: true });
     }
 
-    // Next month leading days to fill 6 weeks (42 days)
     const remaining = 42 - days.length;
     for (let day = 1; day <= remaining; day++) {
       const d = new Date(year, month + 1, day);
@@ -187,6 +228,28 @@ export default function DiaryPage() {
   const formatMonthYear = (date: Date) => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
+
+  // PIN lock screen - early return
+  if (hasPin === 'has_pin' && !pinVerified) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <Card variant="glass" className="p-12 text-center">
+          <div className="text-6xl mb-4">🔒</div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Diary Locked</h3>
+          <p className="text-gray-600 mb-6">Your diary is protected with a PIN. Enter your PIN to access your entries.</p>
+          <Button variant="primary" size="lg" onClick={() => setShowPinModal(true)}>
+            Enter PIN
+          </Button>
+        </Card>
+        <DiaryPinModal
+          isOpen={showPinModal}
+          onClose={() => setShowPinModal(false)}
+          onVerify={handlePinVerified}
+          mode={pinMode}
+        />
+      </div>
+    );
+  }
 
   const selectedDateEntries = selectedDate ? getEntriesForDate(selectedDate) : [];
 
@@ -221,7 +284,7 @@ export default function DiaryPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-64"
           />
-<select
+          <select
             value={emotionFilter}
             onChange={(e) => setEmotionFilter(e.target.value)}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-accent w-full"
@@ -231,6 +294,21 @@ export default function DiaryPage() {
               <option key={tag.value} value={tag.value}>{tag.emoji} {tag.label}</option>
             ))}
           </select>
+          {hasPin === 'has_pin' && pinVerified && (
+            <>
+              <Button variant="outline" size="sm" onClick={handleChangePin}>
+                Change PIN
+              </Button>
+              <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50" onClick={handleRemovePin}>
+                Remove PIN
+              </Button>
+            </>
+          )}
+          {hasPin === 'no_pin' && pinVerified && (
+            <Button variant="outline" size="sm" onClick={handleSetupPin}>
+              Set PIN
+            </Button>
+          )}
           <Button onClick={handleNewEntry} variant="primary" size="md">
             New Entry
           </Button>
@@ -409,7 +487,7 @@ export default function DiaryPage() {
                           {formatDate(entry.entry_date)} · {formatTime(entry.entry_date)} · Updated {new Date(entry.updated_at).toLocaleString()}
                         </p>
                         {entry.emotion_tag && (
-                          <span className="px-2 py-0.5 text-xs bg-accent/10 text-accent rounded-full">
+                          <span className="px-2 py-0.5 text-xs bg-accent/10 text-accent rounded_full">
                             {entry.emotion_tag.charAt(0).toUpperCase() + entry.emotion_tag.slice(1)}
                           </span>
                         )}
@@ -458,6 +536,13 @@ export default function DiaryPage() {
           )}
         </div>
       )}
+
+      <DiaryPinModal
+        isOpen={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onVerify={handlePinVerified}
+        mode={pinMode}
+      />
     </div>
   );
 }

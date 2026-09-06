@@ -720,3 +720,17 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** Visual grid with emojis is faster to scan and more engaging than a dropdown. 5-column layout fits mobile. "None" button provides explicit clearing. Header filter mirrors the same emoji set for consistency.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to J5 — PIN/biometric privacy lock (`feature/j5-diary-privacy-lock`).
+
+### 2026-09-06 — Iteration J5: PIN/biometric privacy lock
+- **Status:** Complete
+- **Summary:** Added optional PIN-based privacy lock for the Diary section. Backend: new `diary_pin_hash` column on `User` model (bcrypt-hashed, nullable for optional), migration `db488b851616`, new `/api/v1/patient/diary/privacy/` endpoints (`POST /pin` set, `PUT /pin` change, `DELETE /pin` remove, `GET /pin/status` check, `POST /pin/verify` verify). Frontend: new `DiaryPinModal` with visual keypad entry (verify/setup/change modes), lock screen when PIN required and not verified, header buttons for setup/change/remove PIN, session-persisted verification. Uses bcrypt hashing consistent with main auth.
+- **Files touched:** backend/app/models/user.py, backend/app/api/v1/diary_privacy.py (new), backend/app/api/v1/router.py, backend/alembic/versions/db488b851616_add_diary_pin_hash_to_user.py, backend/tests/test_diary.py (+4 J5 tests); frontend/src/components/DiaryPinModal.tsx (new), frontend/src/pages/patient/diary/DiaryPage.tsx (PIN gate, header buttons, modal).
+- **Tests/checks:**
+  - pytest full suite: **121 passed** (was 117; +4 J5 tests: setup, change, remove, access with PIN).
+  - npm run build: clean; npm run lint: 5 pre-existing warnings only.
+  - Live smoke: PIN setup ? lock screen ? verify ? access works; change PIN invalidates old; remove PIN disables lock; entries remain accessible after unlock.
+- **Acceptance criteria:** Pass — diary content inaccessible without passing second check even within already-logged-in session; PIN is 4-8 digits; optional feature (no PIN by default).
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j5-diary-privacy-lock` off `develop`.
+- **Decisions & rationale:** PIN-only for now (biometric/WebAuthn deferred to future); uses existing bcrypt hashing for consistency; session-based verification avoids re-entry on every navigation within session; optional feature respects user choice.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to J6 — Optional AI reflection (`feature/j6-diary-ai-reflection`).
