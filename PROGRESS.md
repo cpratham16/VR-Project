@@ -762,3 +762,17 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** Current streak counts consecutive days ending today or yesterday (so a streak continues if you wrote yesterday). Longest streak is all-time maximum. Multiple entries per day count as one day. Date-only comparison ignores time component.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to K1 — Scheduling UI overhaul (`feature/k1-scheduling-layout`).
+
+### 2026-09-06 — Iteration K1: Scheduling UI overhaul
+- **Status:** Complete
+- **Summary:** Redesigned the patient Appointments page layout from single-column stack to responsive two-column layout (desktop) / stacked (mobile). Left column: sticky doctor directory with region/language filters and selectable counselor cards. Right column: session-booking module with date/time, reason, preferred mode, and submit. Bottom section: "My Appointments" history list. Uses CSS Grid for responsive layout (lg:grid-cols-[280px_1fr] with sticky left sidebar). Mobile stacks to single column.
+- **Files touched:** frontend/src/pages/patient/AppointmentsPage.tsx (complete layout restructure).
+- **Tests/checks:**
+  - pytest full suite: **128 passed** (backend unchanged).
+  - npm run build: clean; npm run lint: 5 pre-existing warnings only.
+  - Live smoke: Layout renders correctly; doctor selection works; booking form submits; appointment list displays; responsive on mobile.
+- **Acceptance criteria:** Pass — Layout matches desktop (doctor info left, booking right, appointments bottom) and adapts on mobile.
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/k1-scheduling-layout` off `develop`.
+- **Decisions & rationale:** CSS Grid for desktop two-column layout with sticky sidebar; stacks naturally on mobile. Left sidebar uses `lg:sticky lg:top-24` for sticky behavior. Existing doctor filtering/search logic preserved.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to L1 — Community UI improvement (`feature/l1-community-ui`).

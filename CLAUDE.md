@@ -1,17 +1,16 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: J7 — Journaling streak tracker
+- Last completed iteration: K1 — Scheduling UI overhaul
 - Status: Complete
 - What changed:
-  - **Journaling streak tracker:** Added streak tracking for diary entries. New `GET /api/v1/patient/diary/streak` endpoint returns current streak, longest streak, and last entry date. Streak logic: current streak counts consecutive days ending today or yesterday; longest streak is the maximum consecutive days ever achieved. Frontend shows streak badge (🔥) in diary header with current and best streaks.
-  - **Backend:** Streak calculation based on `entry_date` from diary entries. Handles gaps correctly (streak resets on gap). Returns 0 streaks for users with no entries.
-  - **Frontend:** Streak badge (🔥) displayed in diary header showing current streak and best streak. Fetched on page load via `useEffect`.
+  - **Scheduling layout redesign:** Restructured `PatientAppointmentsPage` from single-column stack to responsive two-column layout (desktop) / stacked (mobile). Left column: sticky doctor directory with filtering; Right column: booking form; Bottom section: appointment history.
+  - **Layout improvements:** Doctor directory on left (sticky on desktop) with region/language filters; Booking form on right with selected doctor context; Appointment history at bottom.
+  - **Mobile responsive:** Stacks to single column on mobile (< lg breakpoint).
 - New/modified modules:
-  - Backend: `app/api/v1/diary.py` (streak endpoint + `StreakResponse` schema), `tests/test_diary.py` (+4 J7 tests: no entries, single entry, consecutive days, broken streak).
-  - Frontend: `pages/patient/diary/DiaryPage.tsx` (streak state, fetch, header badge).
+  - Frontend: `pages/patient/AppointmentsPage.tsx` (complete layout restructure).
 - Verification:
-  - Backend full suite: **128 passed** (was 124; +4 J7 tests: no entries, single entry, consecutive days, broken streak).
+  - Backend full suite: **128 passed** (unchanged).
   - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only.
-  - Live smoke: Streak badge shows correctly; consecutive days tracked; gaps reset current streak; longest streak preserved.
-- Known issues / follow-ups: None. Next: K1 — Scheduling UI overhaul (`feature/k1-scheduling-layout`).
-- Next: K1.
+  - Live smoke: Layout renders correctly; doctor selection works; booking form submits; appointment list displays.
+- Known issues / follow-ups: None. Next: L1 — Community UI improvement (`feature/l1-community-ui`).
+- Next: L1.
