@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../../api/client';
+import { Button } from '../../../components/ui';
 
 interface QuestionItem {
   id: number;
@@ -24,6 +25,25 @@ interface ScreeningResult {
   answers: number[];
 }
 
+interface ScreeningDraft {
+  answers: number[];
+  currentQ: number;
+}
+
+const draftKey = (type: 'PHQ-9' | 'GAD-7') => `screening_draft_${type}`;
+
+const loadDraft = (type: 'PHQ-9' | 'GAD-7'): ScreeningDraft | null => {
+  try {
+    const raw = sessionStorage.getItem(draftKey(type));
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as Partial<ScreeningDraft>;
+    if (!Array.isArray(saved.answers)) return null;
+    return { answers: saved.answers, currentQ: Number(saved.currentQ) || 0 };
+  } catch {
+    return null;
+  }
+};
+
 export default function ScreeningPage() {
   const [searchParams] = useSearchParams();
   const initialType = searchParams.get('type') === 'GAD-7' ? 'GAD-7' : 'PHQ-9';
@@ -31,6 +51,8 @@ export default function ScreeningPage() {
   const [selectedType, setSelectedType] = useState<'PHQ-9' | 'GAD-7'>(initialType);
   const [questionnaire, setQuestionnaire] = useState<QuestionnaireDefinition | null>(null);
   const [answers, setAnswers] = useState<number[]>([]);
+  const [currentQ, setCurrentQ] = useState(0);
+  const [restoredDraft, setRestoredDraft] = useState(false);
   const [result, setResult] = useState<ScreeningResult | null>(null);
   const [history, setHistory] = useState<ScreeningResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,14 +66,32 @@ export default function ScreeningPage() {
     }
   }, [selectedType, activeTab]);
 
+  const persistDraft = (type: 'PHQ-9' | 'GAD-7', nextAnswers: number[], nextQ: number) => {
+    if (!questionnaire || result) return;
+    sessionStorage.setItem(draftKey(type), JSON.stringify({ answers: nextAnswers, currentQ: nextQ }));
+  };
+
   const fetchQuestions = async (type: 'PHQ-9' | 'GAD-7') => {
     setLoading(true);
     setError('');
     setResult(null);
     try {
       const res = await apiClient.get(`/patient/screening/questions/${type}`);
+      const count = res.data.questions.length;
       setQuestionnaire(res.data);
-      setAnswers(new Array(res.data.questions.length).fill(-1));
+      const draft = loadDraft(type);
+      if (draft) {
+        const padded = Array.from({ length: count }, (_, i) =>
+          i < draft.answers.length && Number.isInteger(draft.answers[i]) ? draft.answers[i] : -1
+        );
+        setAnswers(padded);
+        setCurrentQ(Math.min(Math.max(draft.currentQ, 0), count - 1));
+        setRestoredDraft(true);
+      } else {
+        setAnswers(new Array(count).fill(-1));
+        setCurrentQ(0);
+        setRestoredDraft(false);
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load questionnaire');
     } finally {
@@ -72,15 +112,34 @@ export default function ScreeningPage() {
     }
   };
 
-  const handleOptionSelect = (qIdx: number, value: number) => {
+  const handleOptionSelect = (value: number) => {
+    if (!questionnaire) return;
     const updated = [...answers];
-    updated[qIdx] = value;
+    updated[currentQ] = value;
     setAnswers(updated);
+    persistDraft(selectedType, updated, currentQ);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (answers.some((a) => a === -1)) {
+  const goNext = () => {
+    if (!questionnaire) return;
+    if (currentQ < questionnaire.questions.length - 1) {
+      setCurrentQ((c) => c + 1);
+      persistDraft(selectedType, answers, currentQ + 1);
+    } else {
+      handleSubmit();
+    }
+  };
+
+  const goPrev = () => {
+    if (currentQ > 0) {
+      setCurrentQ((c) => c - 1);
+      persistDraft(selectedType, answers, currentQ - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!questionnaire) return;
+    if (answers.some((a) => a === -1) || answers.length !== questionnaire.questions.length) {
       setError('Please answer all questions before submitting.');
       return;
     }
@@ -92,11 +151,21 @@ export default function ScreeningPage() {
         answers: answers
       });
       setResult(res.data);
+      sessionStorage.removeItem(draftKey(selectedType));
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Submission failed');
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetAssessment = () => {
+    if (!questionnaire) return;
+    setResult(null);
+    setAnswers(new Array(questionnaire.questions.length).fill(-1));
+    setCurrentQ(0);
+    setRestoredDraft(false);
+    sessionStorage.removeItem(draftKey(selectedType));
   };
 
   const getBandColor = (band: string) => {
@@ -174,47 +243,68 @@ export default function ScreeningPage() {
               {loading && <div className="py-8 text-center text-gray-500">Loading questionnaire...</div>}
 
               {questionnaire && !loading && (
-                <form onSubmit={handleSubmit} className="space-y-8">
+                <form onSubmit={(e) => { e.preventDefault(); goNext(); }} className="space-y-6">
                   <div>
                     <h3 className="text-xl font-semibold text-gray-800">{questionnaire.title}</h3>
                     <p className="text-sm text-gray-600 mt-1 italic">{questionnaire.instructions}</p>
                   </div>
 
-                  <div className="space-y-6">
-                    {questionnaire.questions.map((q, qIdx) => (
-                      <div key={q.id} className="p-4 bg-gray-50 rounded-lg border border-gray-100 space-y-3">
-                        <p className="font-medium text-gray-800">
-                          {qIdx + 1}. {q.text}
-                        </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" role="group" aria-label={`Question ${qIdx + 1}`}>
-                          {questionnaire.options.map((opt, optIdx) => (
-                            <button
-                              key={optIdx}
-                              type="button"
-                              onClick={() => handleOptionSelect(qIdx, optIdx)}
-                              aria-pressed={answers[qIdx] === optIdx}
-                              className={`py-2 px-3 text-xs sm:text-sm rounded border text-center font-medium transition ${
-                                answers[qIdx] === optIdx
-                                  ? 'bg-accent text-white border-accent'
-                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                  {/* Progress */}
+                  <div role="progressbar" aria-valuemin={0} aria-valuemax={questionnaire.questions.length} aria-valuenow={currentQ + 1} aria-label="Assessment progress">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+                      <div
+                        className="h-full bg-accent transition-all duration-300 ease-out"
+                        style={{ width: `${((currentQ + 1) / questionnaire.questions.length) * 100}%` }}
+                      />
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-xs font-medium text-gray-500">
+                        Question {currentQ + 1} of {questionnaire.questions.length}
+                      </p>
+                      {restoredDraft && (
+                        <p className="text-xs italic text-gray-500">Resumed your saved draft</p>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="py-3 px-6 bg-accent text-white font-medium rounded-lg shadow hover:bg-accent-secondary disabled:opacity-50 transition"
-                    >
-                      Submit Assessment
-                    </button>
+                  {/* Single question */}
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 space-y-3">
+                    <p className="font-medium text-gray-800">
+                      {currentQ + 1}. {questionnaire.questions[currentQ].text}
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" role="group" aria-label={`Question ${currentQ + 1}`}>
+                      {questionnaire.options.map((opt, optIdx) => (
+                        <button
+                          key={optIdx}
+                          type="button"
+                          onClick={() => handleOptionSelect(optIdx)}
+                          aria-pressed={answers[currentQ] === optIdx}
+                          className={`py-3 px-3 text-xs sm:text-sm rounded border text-center font-medium transition cursor-pointer ${
+                            answers[currentQ] === optIdx
+                              ? 'bg-accent text-white border-accent'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Navigation */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                    <Button variant="outline" size="md" onClick={goPrev} disabled={currentQ === 0}>
+                      Previous
+                    </Button>
+                    {currentQ < questionnaire.questions.length - 1 ? (
+                      <Button variant="primary" size="md" type="submit">
+                        Next
+                      </Button>
+                    ) : (
+                      <Button variant="primary" size="md" type="submit" isLoading={loading}>
+                        Submit Assessment
+                      </Button>
+                    )}
                   </div>
                 </form>
               )}
@@ -245,7 +335,7 @@ export default function ScreeningPage() {
 
               <div className="flex justify-center space-x-4 pt-4">
                 <button
-                  onClick={() => setResult(null)}
+                  onClick={resetAssessment}
                   className="px-5 py-2 bg-accent text-white font-medium rounded-md hover:bg-accent-secondary transition"
                 >
                   Take Another Assessment
