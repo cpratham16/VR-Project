@@ -706,3 +706,17 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** Search is server-side for scalability; emotion_tag filter uses exact match (prepares for J4 tagging UI). Frontend uses useCallback to avoid exhaustive-deps warning while keeping reactive updates. Combined query uses AND logic for precision.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to J4 — Optional emotion tagging UI (`feature/j4-diary-emotion-tags`).
+
+### 2026-09-06 — Iteration J4: Optional emotion tagging
+- **Status:** Complete
+- **Summary:** Replaced plain emotion tag dropdown with visual emoji grid picker (10 emotions: ?? Happy, ?? Calm, ?? Sad, ?? Anxious, ?? Stressed, ?? Grateful, ?? Angry, ?? Excited, ?? Lonely, ?? Hopeful) in entry create/edit form. "None" button to clear tag. Header filter dropdown updated with emojis. Entries already display emotion badge from J3.
+- **Files touched:** frontend/src/pages/patient/diary/DiaryPage.tsx (EMOTION_TAGS as objects with emoji/label, visual 5-column grid picker in form, emojis in filter dropdown).
+- **Tests/checks:**
+  - pytest full suite: **117 passed** (backend unchanged).
+  - npm run build: clean; npm run lint: 5 pre-existing warnings only.
+  - Live smoke: Emoji grid picker works; selection persists on create/edit; filter dropdown shows emojis; badge displays on entries.
+- **Acceptance criteria:** Pass — entry can be saved with or without emotion tag; diary emotion tags do not write to or read from Mood Tracker data.
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j4-diary-emotion-tags` off `develop`.
+- **Decisions & rationale:** Visual grid with emojis is faster to scan and more engaging than a dropdown. 5-column layout fits mobile. "None" button provides explicit clearing. Header filter mirrors the same emoji set for consistency.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to J5 — PIN/biometric privacy lock (`feature/j5-diary-privacy-lock`).

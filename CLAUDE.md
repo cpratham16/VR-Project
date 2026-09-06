@@ -1,16 +1,16 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: J3 — Search & filter
+- Last completed iteration: J4 — Optional emotion tagging
 - Status: Complete
 - What changed:
-  - **Diary search & filter:** Backend list endpoint now supports `q` (keyword search in title + content) and `emotion_tag` filter. Added `emotion_tag` column to `DiaryEntry` model with migration. Frontend `DiaryPage.tsx` gains search input and emotion filter dropdown in header; results update reactively via `useCallback` + `useEffect`. Entries display emotion tag badge when set.
-  - **Schema updates:** `DiaryEntryCreate/Update/Response` now include optional `emotion_tag` (max 50 chars).
+  - **Visual emotion tag picker:** Replaced plain dropdown with emoji grid (10 emotions: 😊 Happy, 😌 Calm, 😢 Sad, 😰 Anxious, 😫 Stressed, 🙏 Grateful, 😠 Angry, 🤩 Excited, 😔 Lonely, 🌱 Hopeful) in entry form. "None" option to clear tag. Header filter dropdown updated with emojis.
+  - **Entry display:** Emotion badge already present from J3.
+  - **Schema/API:** Unchanged (already supported emotion_tag from J3).
 - New/modified modules:
-  - Backend: `app/models/diary.py` (emotion_tag), `app/schemas/diary.py` (emotion_tag in all schemas), `app/api/v1/diary.py` (search/filter params, emotion_tag on create/update), migration `3b56934ec7b0`, `tests/test_diary.py` (+3 J3 tests: keyword search, emotion_tag filter, combined).
-  - Frontend: `pages/patient/diary/DiaryPage.tsx` (search input, emotion filter select, useCallback fetch, emotion tag badge on entries).
+  - Frontend: `pages/patient/diary/DiaryPage.tsx` (EMOTION_TAGS now objects with emoji/label, visual grid picker in form, emoji in filter dropdown).
 - Verification:
-  - Backend full suite: **117 passed** (was 114; +3 J3 tests: keyword search, emotion_tag filter, combined search+filter).
+  - Backend full suite: **117 passed** (unchanged).
   - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only.
-  - Live smoke: keyword search filters results in real-time; emotion tag filter works; combined query narrows correctly; emotion tag badge displays on entries.
-- Known issues / follow-ups: None. Next: J4 — Optional emotion tagging UI (`feature/j4-diary-emotion-tags`).
-- Next: J4.
+  - Live smoke: Emoji grid picker works; selection persists on create/edit; filter dropdown shows emojis; badge displays on entries.
+- Known issues / follow-ups: None. Next: J5 — PIN/biometric privacy lock (`feature/j5-diary-privacy-lock`).
+- Next: J5.
