@@ -1,23 +1,21 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: I1 — Daily popup reminder, skippable (per-instrument PHQ-9/GAD-7)
+- Last completed iteration: I2 — One-question-at-a-time flow (PHQ-9/GAD-7)
 - Status: Complete
 - What changed:
-  - **Per-instrument reminder endpoint:** `GET /api/v1/patient/screening/reminder` now returns one reminder status per instrument — keyed `"PHQ-9"` and `"GAD-7"` (canonical `screening_type` values) via a new `_latest_result_for` helper — instead of a single `should_remind`. Completing one assessment never suppresses the other. Existing smart intervals unchanged (`compute_reminder`: 14-day default, 7-day elevated-band, recency + severity aware).
-  - **New frontend daily nudge:** `useScreeningReminder` hook fetches the endpoint at most once per calendar day (result cached in `sessionStorage` under `screening_reminder_checked_<date>`); `AssessmentReminderModal` (per-instrument labels, "Take a" primary + secondary-optional + Take later / Skip today) renders for patient role via an `enabled` guard in `MainLayout` (role gate is layout-level, per user decision). "Skip today" persists to `localStorage` (`screening_reminder_skip_<TYPE>_<date>`) so the reminder stays hidden until midnight; "Take later" dismisses for the session only — the assessment stays reachable from the Dashboard card.
-  - **Deep-link prep:** `ScreeningPage` now reads `?type=` (GAD-7 vs default PHQ-9) so "Take now" lands on the chosen instrument.
+  - **Single-question assessment flow:** `ScreeningPage.tsx` no longer renders all questions at once. The questionnaire now shows exactly one question at a time (`questions[currentQ]`), a compact progress bar with "Question X of N" (accent fill, `role=progressbar`), and Previous / Next navigation — Previous is `outline` and disabled on Q1, Next becomes "Submit Assessment" (with the design-system `Button`'s spinner while submitting) on the last question. Option buttons keep the existing 2×2-on-mobile / 4-across-desktop grid.
+  - **Mid-assessment persistence:** Answers and position are saved to `sessionStorage` per instrument (`screening_draft_PHQ-9` / `screening_draft_GAD-7` as `{ answers, currentQ }`) via explicit `persistDraft` calls on select/Next/Previous — no persistence effect (which would have re-saved stale drafts after submit/reset). On load, the draft is restored with answers padded/clamped to the question count and a "Resumed your saved draft" hint. Only the submitted type's draft is cleared on successful submit; the other instrument's draft is kept (user decision #4). "Take Another Assessment" resets answers/position to a fresh -1 array and removes that type's draft.
+  - **Type switching preserved:** PHQ-9↔GAD-7 tab still refetches that instrument and independently restores its own draft; `?type=` deep-link init unchanged (from I1).
 - New/modified modules:
-  - Backend: `app/api/v1/screening.py` (reminder endpoint per-instrument), new `tests/test_screening_reminder.py`.
-  - Frontend: `hooks/useScreeningReminder.ts` (new), `components/AssessmentReminderModal.tsx` (new), `layouts/MainLayout.tsx`, `pages/patient/screening/ScreeningPage.tsx`.
+  - Frontend: `pages/patient/screening/ScreeningPage.tsx` (refactor; +131/−41). No backend changes, no new files.
 - Key decisions made:
-  - Reminder is per-instrument (independent booleans), not a shared daily flag — user decision #2.
-  - Placement = `MainLayout` wrapper gated on `user.role === 'patient'` (option B), not a new PatientLayout.
-  - One API call per day: sessionStorage cache keyed by calendar date; midnight reset via same key. Skip is calendar-day-scoped (localStorage); Take-later is session-scoped only.
-  - Engine `compute_reminder` left untouched — existing `test_screening_engine.py` unit tests (default/elevated intervals) still cover scoring-led logic; new endpoint tests assert the per-instrument shape + independence.
+  - Progress = minimal bar + "Question X of N" (Stepper is too wide for 7–9 questions on mobile).
+  - Explicit Next click (no auto-advance) for accessibility/deliberate responses.
+  - End-of-assessment validation kept (submit blocked with a message if any answer missing); per-question gating not added.
+  - Persistence done in mutation handlers rather than a `useEffect` to avoid clobbering cleared drafts after submit/reset.
 - Verification:
-  - Backend full suite: **108 passed** (was 106; +2 `test_screening_reminder.py`: both-instruments present with `no_screening_on_record`, completed PHQ-9 → `not_due` while GAD-7 still `should_remind`). Tests clean up their own rows (screening results deleted before user).
-  - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only (no new).
-  - Live: `alice@campus.edu` → `GET /patient/screening/reminder` returns `{"PHQ-9": {...should_remind: true, interval_days: 7}, "GAD-7": {...}}` (elevated-band 7-day interval correctly surfaced per instrument).
-  - Git: branch `feature/i1-assessment-daily-popup` created per 0b off `fix/h5-admin-login` (develop still lacks H1–H5 — PR not yet merged).
-- Known issues / follow-ups: None. Next: I2 — One-question-at-a-time flow (`feature/i2-assessment-one-at-a-time`).
-- Next: I2.
+  - Frontend `npm run build`: clean (0 TS errors); `npm run lint`: 5 pre-existing warnings only (no new from ScreeningPage).
+  - Acceptance walked in diff: single-question render, sessionStorage restore path (padded/clamped + resume hint), draft remove only for `selectedType` on submit; backend/schema untouched (scoring unaffected).
+  - Git: branch `feature/i2-assessment-one-at-a-time` created per 0b off `feature/i1-assessment-daily-popup`.
+- Known issues / follow-ups: None. Next: J1 — Diary data model + entry CRUD (`feature/j1-diary-crud`).
+- Next: J1.

@@ -650,3 +650,17 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** Per-instrument independent booleans (user decision #2) instead of a shared daily flag. Layout-level role gate in `MainLayout` (option B). One API call per calendar day with midnight reset; Skip is calendar-day-scoped, Take-later session-scoped only. Engine `compute_reminder` untouched so existing scoring-engine unit tests remain the source of truth for interval logic; endpoint tests assert the per-instrument shape and independence.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to I2 — One-question-at-a-time flow (`feature/i2-assessment-one-at-a-time`).
+
+### 2026-09-06 — Iteration I2: One-question-at-a-time flow (PHQ-9/GAD-7)
+- **Status:** Complete
+- **Summary:** Replaced the ScreeningPage all-at-once questionnaire with a single-question wizard. Only `questions[currentQ]` renders now, backed by a compact accent progress bar + "Question X of N" (`role=progressbar`), Previous (`outline`, disabled on Q1) and Next/"Submit Assessment" (`primary` with spinner while submitting, form submit handles Enter) navigation. Mid-assessment state persists per instrument in `sessionStorage` (`screening_draft_PHQ-9` / `screening_draft_GAD-7` = `{ answers, currentQ }`), written explicitly in the select/Next/Previous handlers (no persistence effect, so cleared drafts never get re-saved); on reload it's restored with answers padded/clamped to the question count plus a "Resumed your saved draft" hint. Submit removes only the submitted type's draft (other instrument's draft kept); "Take Another Assessment" resets to a fresh -1 array and clears that type's draft. Type switcher, `?type=` deep-link, History tab, and results screen unchanged.
+- **Files touched:** frontend/src/pages/patient/screening/ScreeningPage.tsx (refactor, +131/-41). Backend untouched — no new files.
+- **Tests/checks:**
+  - npm run build: clean (0 TS errors); npm run lint: 5 pre-existing warnings only (no new).
+  - Acceptance walked in final diff: one-question render; draft restore path (pad/clamp + resume hint); draft removed only for selectedType on submit; backend/schema untouched ? scoring logic unaffected.
+  - (Vite dev-server on-demand transform smoke aborted after startup timeout — superseded by clean `tsc -b && vite build`; no stray processes left.)
+- **Acceptance criteria:** Pass — only one question visible at a time; progress preserved if the user navigates away mid-assessment (sessionStorage per type); scoring logic unaffected by the layout change.
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/i2-assessment-one-at-a-time` created off `feature/i1-assessment-daily-popup` (carry-forward baseline pattern).
+- **Decisions & rationale:** Mininal progress bar + "Question X of N" over the Stepper component (too wide for 7–9 questions on mobile). Explicit Next (no auto-advance) for accessibility and deliberate responses. End-of-assessment validation retained rather than per-question gating. Explicit handler-based `persistDraft` avoids the clobber bug an answers/currentQ effect would introduce after submit/reset.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to J1 — Diary data model + entry CRUD (`feature/j1-diary-crud`).
