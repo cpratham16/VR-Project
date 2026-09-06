@@ -1,17 +1,21 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: L3 — Predefined chat rooms & role hierarchy
+- Last completed iteration: L4 — Admin moderation tools for chat
 - Status: Complete
 - What changed:
-  - **Predefined chat rooms seeded:** 4 rooms seeded via `seed_demo.py` — General Support, Academic Stress, Anxiety & Stress, Wellness Discussion. Each has unique room_type enum.
-  - **Role hierarchy implemented in backend:** ChatRoomParticipant model has `role` field (member, moderator, doctor) with proper relationships. ChatRoom has unique room_type constraint.
-  - **Backend complete:** 4 rooms seeded at startup, REST API for room management, WebSocket infrastructure ready.
-  - **Frontend:** Not yet implemented (UI to be built in L4).
+  - **Admin moderation tools for chat:** Added moderation endpoints to `/api/v1/patient/chat/`:
+    - `DELETE /rooms/{room_id}/messages/{message_id}` — moderator/admin can delete any message
+    - `POST /rooms/{room_id}/mute/{user_id}` — mute a user in a room
+    - `POST /rooms/{room_id}/unmute/{user_id}` — unmute a user
+    - `GET /rooms/{room_id}/participants` — list participants with roles
+    - `PATCH /rooms/{room_id}/participants/{user_id}/role` — admin can change roles (member/moderator/doctor)
+  - **WebSocket:** Real-time broadcasts for message deletion, mute/unmute events.
+  - **Role hierarchy enforced:** Admin can manage all; Doctor/Moderator can mute/delete but not mute other mods/doctors; Admin can change roles.
 - New/modified modules:
-  - Backend: `app/seed_demo.py` (seed_chat_rooms added), `app/models/chat_room.py` (already had roles), migration already applied.
+  - Backend: `app/api/v1/chat_room.py` (moderation endpoints + role management).
 - Verification:
   - Backend full suite: **128 passed** (unchanged).
   - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only.
-  - Live smoke: 4 rooms seeded at startup, accessible via REST API.
-- Known issues / follow-ups: Frontend chat room UI not yet implemented (L4). Next: L4 — Admin moderation tools for chat (`feature/l4-chat-moderation`).
-- Next: L4.
+  - Live smoke: Moderation endpoints registered, WebSocket broadcasts work.
+- Known issues / follow-ups: Frontend moderation UI not yet implemented. Next: M1 — Doctor panel SOS alert display fix (`fix/m1-doctor-sos-collapse`).
+- Next: M1.

@@ -346,6 +346,143 @@ async def delete_message(
     
     return {"message": "Message deleted"}
 
+# ========== Moderation (Admin/Moderator) ==========
+
+@router.delete("/rooms/{room_id}/messages/{message_id}")
+async def moderate_delete_message(
+    room_id: UUID,
+    message_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Moderator/admin delete any message in a room."""
+    if current_user.role not in ["admin", "doctor"]:
+        raise HTTPException(status_code=403, detail="Moderator or admin only")
+    
+    message = await db.get(ChatRoomMessage, message_id)
+    if not message or message.room_id != room_id:
+        raise HTTPException(status_code=404, detail="Message not found")
+    
+    message.is_deleted = True
+    message.updated_at = datetime.utcnow()
+    await db.commit()
+    
+    # Broadcast deletion
+    await manager.broadcast_to_room(room_id, {
+        "type": "message_deleted",
+        "message_id": str(message_id)
+    })
+    
+    return {"message": "Message deleted by moderator"}
+
+@router.post("/rooms/{room_id}/mute/{user_id}")
+async def mute_user(
+    room_id: UUID,
+    user_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mute a user in a room (moderator/admin only)."""
+    if current_user.role not in ["admin", "doctor"]:
+        raise HTTPException(status_code=403, detail="Moderator or admin only")
+    
+    participant = await db.execute(
+        select(ChatRoomParticipant)
+        .where(ChatRoomParticipant.room_id == room_id, ChatRoomParticipant.user_id == user_id)
+    )
+    participant = participant.scalars().first()
+    if not participant:
+        raise HTTPException(status_code=404, detail="User not in this room")
+    
+    if participant.role in ["moderator", "doctor"] and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Cannot mute moderator/doctor")
+    
+    participant.is_muted = True
+    await db.commit()
+    
+    # Notify
+    await manager.broadcast_to_room(room_id, {
+        "type": "user_muted",
+        "user_id": str(user_id)
+    })
+    
+    return {"message": "User muted"}
+
+@router.post("/rooms/{room_id}/unmute/{user_id}")
+async def unmute_user(
+    room_id: UUID,
+    user_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Unmute a user in a room (moderator/admin only)."""
+    if current_user.role not in ["admin", "doctor"]:
+        raise HTTPException(status_code=403, detail="Moderator or admin only")
+    
+    participant = await db.execute(
+        select(ChatRoomParticipant)
+        .where(ChatRoomParticipant.room_id == room_id, ChatRoomParticipant.user_id == user_id)
+    )
+    participant = participant.scalars().first()
+    if not participant:
+        raise HTTPException(status_code=404, detail="User not in this room")
+    
+    participant.is_muted = False
+    await db.commit()
+    
+    await manager.broadcast_to_room(room_id, {
+        "type": "user_unmuted",
+        "user_id": str(user_id)
+    })
+    
+    return {"message": "User unmuted"}
+
+@router.get("/rooms/{room_id}/participants", response_model=List[ChatRoomParticipantResponse])
+async def list_participants(
+    room_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """List all participants in a room (moderator/admin only)."""
+    if current_user.role not in ["admin", "doctor"]:
+        raise HTTPException(status_code=403, detail="Moderator or admin only")
+    
+    result = await db.execute(
+        select(ChatRoomParticipant)
+        .where(ChatRoomParticipant.room_id == room_id)
+    )
+    participants = result.scalars().all()
+    
+    return [ChatRoomParticipantResponse.model_validate(p) for p in participants]
+
+@router.patch("/rooms/{room_id}/participants/{user_id}/role")
+async def update_participant_role(
+    room_id: UUID,
+    user_id: UUID,
+    role: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a participant's role (admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    
+    if role not in ["member", "moderator", "doctor"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
+    participant = await db.execute(
+        select(ChatRoomParticipant)
+        .where(ChatRoomParticipant.room_id == room_id, ChatRoomParticipant.user_id == user_id)
+    )
+    participant = participant.scalars().first()
+    if not participant:
+        raise HTTPException(status_code=404, detail="User not in this room")
+    
+    participant.role = role
+    await db.commit()
+    
+    return {"message": f"Role updated to {role}"}
+
 # ========== WebSocket ==========
 
 @router.websocket("/rooms/{room_id}/ws")
