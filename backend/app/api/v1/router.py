@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import health, auth, patient, screening, mood, diary, diary_privacy, doctor, chat, panic, doctor_alerts, community, doctor_moderation, doctor_vr, patient_vr, admin, debug, doctor_profile
+from app.api.v1 import health, auth, patient, screening, mood, diary, diary_privacy, chat_room, doctor, chat, panic, doctor_alerts, community, doctor_moderation, doctor_vr, patient_vr, admin, debug, doctor_profile
 
 api_router = APIRouter()
 ...
@@ -11,6 +11,7 @@ api_router.include_router(screening.router, prefix="/patient/screening", tags=["
 api_router.include_router(mood.router, prefix="/patient/mood", tags=["mood"])
 api_router.include_router(diary.router, prefix="/patient/diary", tags=["diary"])
 api_router.include_router(diary_privacy.router, prefix="/patient/diary", tags=["diary_privacy"])
+api_router.include_router(chat_room.router, prefix="/patient/chat", tags=["chat_rooms"])
 api_router.include_router(chat.router, prefix="/patient/chat", tags=["chat"])
 api_router.include_router(panic.router, prefix="/patient/panic", tags=["panic"])
 api_router.include_router(community.router, prefix="/community", tags=["community"])

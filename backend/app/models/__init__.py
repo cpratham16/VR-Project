@@ -8,6 +8,7 @@ from app.models.diary import DiaryEntry
 from app.models.note import ClinicalNote
 from app.models.appointment import Appointment
 from app.models.chat import ChatSession, ChatMessage
+from app.models.chat_room import ChatRoom, ChatRoomParticipant, ChatRoomMessage
 from app.models.alert import RiskAlert
 from app.models.notification import NotificationRecord
 from app.models.community import CommunityPost, CommunityComment

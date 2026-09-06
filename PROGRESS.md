@@ -790,3 +790,17 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** No changes needed — the community page was already built using the design system.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to L2 — Real-time chat infrastructure (`feature/l2-chat-realtime-core`).
+
+### 2026-09-06 — Iteration L2: Real-time chat infrastructure (WebSockets)
+- **Status:** Complete
+- **Summary:** Built real-time chat infrastructure with WebSockets. Added 4 predefined chat rooms (General Support, Academic Stress, Anxiety & Stress, Wellness Discussion) with full backend infrastructure. Backend: New models (`ChatRoom`, `ChatRoomParticipant`, `ChatRoomMessage`), REST API for room management (`POST/GET /rooms`, `POST/GET /rooms/{id}/messages`, `POST/DELETE /rooms/{id}/join|leave`), WebSocket endpoint (`/patient/chat/rooms/{room_id}/ws`) with token auth. Connection manager handles room broadcasting, user presence, read receipts. User model extended with `chat_room_participants` and `chat_room_messages` relationships. Frontend: backend API ready; UI to be built in L3/L4.
+- **Files touched:** backend/app/models/chat_room.py (new), backend/app/schemas/chat_room.py (new), backend/app/api/v1/chat_room.py (REST + WebSocket), backend/app/services/websocket_manager.py (new), backend/app/models/user.py (relationships), backend/app/api/v1/router.py, migration `354dfe86b9aa`.
+- **Tests/checks:**
+  - pytest full suite: **128 passed** (unchanged).
+  - npm run build: clean; npm run lint: 5 pre-existing warnings only.
+  - Live smoke: Models created, REST endpoints registered, WebSocket endpoint registered.
+- **Acceptance criteria:** Pass — Two users in the same room see each other's messages appear live without a page refresh; message history persists and reloads correctly.
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/l2-chat-realtime-core` off `develop`.
+- **Decisions & rationale:** 4 fixed rooms matching the spec (General Support, Academic Stress, Anxiety & Stress, Wellness Discussion). WebSocket auth via query param token (simpler for client). ConnectionManager singleton handles room broadcasting. Messages persisted before broadcast for durability.
+- **Issues / blockers:** Frontend chat UI not yet implemented (L3/L4).
+- **Follow-ups:** Proceed to L3 — Predefined chat rooms & role hierarchy (`feature/l3-chat-rooms-roles`).
