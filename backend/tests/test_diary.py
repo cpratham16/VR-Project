@@ -1549,3 +1549,103 @@ async def test_reflect_on_other_users_entry():
 
     await _delete_user_and_entries(email1)
     await _delete_user_and_entries(email2)
+
+# J7: Streak tests
+@pytest.mark.asyncio
+async def test_streak_no_entries():
+    email = f"j7_streak_none_{uuid.uuid4().hex[:6]}@test.com"
+    user = await _create_patient(email)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        login = await ac.post("/api/v1/auth/login", data={"username": email, "password": "secret123"})
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        res = await ac.get("/api/v1/patient/diary/streak", headers=headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert data["current_streak"] == 0
+        assert data["longest_streak"] == 0
+        assert data["last_entry_date"] is None
+
+    await _delete_user_and_entries(email)
+
+
+@pytest.mark.asyncio
+async def test_streak_single_entry():
+    email = f"j7_streak_single_{uuid.uuid4().hex[:6]}@test.com"
+    user = await _create_patient(email)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        login = await ac.post("/api/v1/auth/login", data={"username": email, "password": "secret123"})
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Entry 1",
+            "content": "First entry",
+            "entry_date": "2026-09-06T12:00:00"
+        }, headers=headers)
+
+        res = await ac.get("/api/v1/patient/diary/streak", headers=headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert data["current_streak"] == 1
+        assert data["longest_streak"] == 1
+        assert data["last_entry_date"] == "2026-09-06"
+
+    await _delete_user_and_entries(email)
+
+
+@pytest.mark.asyncio
+async def test_streak_consecutive_days():
+    email = f"j7_streak_consec_{uuid.uuid4().hex[:6]}@test.com"
+    user = await _create_patient(email)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        login = await ac.post("/api/v1/auth/login", data={"username": email, "password": "secret123"})
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        # Create entries for 3 consecutive days
+        for i in range(3):
+            await ac.post("/api/v1/patient/diary/", json={
+                "title": f"Entry {i+1}",
+                "content": f"Day {i+1}",
+                "entry_date": f"2026-09-0{i+4}T12:00:00"  # Sep 4, 5, 6
+            }, headers=headers)
+
+        res = await ac.get("/api/v1/patient/diary/streak", headers=headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert data["current_streak"] == 3
+        assert data["longest_streak"] == 3
+
+    await _delete_user_and_entries(email)
+
+
+@pytest.mark.asyncio
+async def test_streak_broken():
+    email = f"j7_streak_broken_{uuid.uuid4().hex[:6]}@test.com"
+    user = await _create_patient(email)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        login = await ac.post("/api/v1/auth/login", data={"username": email, "password": "secret123"})
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        # Entries on Sep 4, 5 (consecutive), then gap, then Sep 8
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Day 1", "content": "Day 1", "entry_date": "2026-09-04T12:00:00"
+        }, headers=headers)
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Day 2", "content": "Day 2", "entry_date": "2026-09-05T12:00:00"
+        }, headers=headers)
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Day 4", "content": "Day 4", "entry_date": "2026-09-08T12:00:00"  # Gap on Sep 6-7
+        }, headers=headers)
+
+        res = await ac.get("/api/v1/patient/diary/streak", headers=headers)
+        assert res.status_code == 200
+        data = res.json()
+        # Current streak should be 1 (only Sep 8 if today is Sep 8 or Sep 9)
+        # Longest streak should be 2 (Sep 4-5)
+        assert data["longest_streak"] == 2
+
+    await _delete_user_and_entries(email)

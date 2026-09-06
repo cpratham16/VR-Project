@@ -748,3 +748,17 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** Groq `openai/gpt-oss-20b` for consistency with existing AI companion. System prompt emphasizes empathy, no clinical advice, crisis awareness. Fallback message ensures graceful degradation. Ownership check prevents cross-user access.
 - **Issues / blockers:** Groq API key required for full functionality (graceful fallback included).
 - **Follow-ups:** Proceed to J7 — Journaling streak tracker (`feature/j7-diary-streak`).
+
+### 2026-09-06 — Iteration J7: Journaling streak tracker
+- **Status:** Complete
+- **Summary:** Added journaling streak tracking. Backend: new `GET /api/v1/patient/diary/streak` endpoint computes current streak (consecutive days ending today/yesterday), longest streak ever, and last entry date. Logic handles gaps correctly (current streak resets on gap, longest streak preserved). Frontend: streak badge (??) in diary header shows current and best streak counts, fetched on page load.
+- **Files touched:** backend/app/api/v1/diary.py (streak endpoint + StreakResponse schema), backend/tests/test_diary.py (+4 J7 tests: no entries, single entry, consecutive days, broken streak); frontend/src/pages/patient/diary/DiaryPage.tsx (streak state, fetch, header badge).
+- **Tests/checks:**
+  - pytest full suite: **128 passed** (was 124; +4 J7 tests: no entries, single entry, consecutive days, broken streak).
+  - npm run build: clean; npm run lint: 5 pre-existing warnings only.
+  - Live smoke: Streak badge shows correctly; consecutive days tracked; gaps reset current streak; longest streak preserved.
+- **Acceptance criteria:** Pass — streak increments correctly with consecutive-day entries and resets appropriately on a missed day.
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j7-diary-streak` off `develop`.
+- **Decisions & rationale:** Current streak counts consecutive days ending today or yesterday (so a streak continues if you wrote yesterday). Longest streak is all-time maximum. Multiple entries per day count as one day. Date-only comparison ignores time component.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to K1 — Scheduling UI overhaul (`feature/k1-scheduling-layout`).

@@ -1,6 +1,7 @@
 from typing import List, Optional
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import and_, desc, or_
@@ -120,6 +121,65 @@ async def list_diary_entries(
     query = query.order_by(desc(DiaryEntry.entry_date)).limit(limit).offset(offset)
     result = await db.execute(query)
     return result.scalars().all()
+
+
+# J7: Streak endpoint
+class StreakResponse(BaseModel):
+    current_streak: int
+    longest_streak: int
+    last_entry_date: Optional[str]
+
+@router.get("/streak", response_model=StreakResponse)
+async def get_diary_streak(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get the current and longest journaling streak for the user."""
+    query = await db.execute(
+        select(DiaryEntry.entry_date)
+        .where(DiaryEntry.user_id == current_user.id)
+        .order_by(DiaryEntry.entry_date.desc())
+    )
+    entries = query.scalars().all()
+    
+    if not entries:
+        return StreakResponse(current_streak=0, longest_streak=0, last_entry_date=None)
+    
+    # Convert to date objects (ignore time)
+    entry_dates = sorted(set(e.date() for e in entries))
+    
+    # Calculate streaks
+    current_streak = 0
+    longest_streak = 0
+    today = datetime.utcnow().date()
+    yesterday = today - timedelta(days=1)
+    
+    # Check if there's an entry today or yesterday to start current streak
+    if entry_dates[-1] == today or entry_dates[-1] == yesterday:
+        current_streak = 1
+        for i in range(len(entry_dates) - 2, -1, -1):
+            if entry_dates[i+1] - entry_dates[i] == timedelta(days=1):
+                current_streak += 1
+            else:
+                break
+    else:
+        current_streak = 0
+    
+    # Longest streak (scan all dates)
+    streak = 1
+    longest_streak = 1
+    for i in range(1, len(entry_dates)):
+        if entry_dates[i] - entry_dates[i-1] == timedelta(days=1):
+            streak += 1
+            longest_streak = max(longest_streak, streak)
+        else:
+            streak = 1
+    
+    return StreakResponse(
+        current_streak=current_streak,
+        longest_streak=longest_streak,
+        last_entry_date=entry_dates[-1].isoformat() if entry_dates else None
+    )
 
 @router.get("/{entry_id}", response_model=DiaryEntryResponse)
 async def get_diary_entry(

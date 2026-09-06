@@ -1,18 +1,17 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: J6 — Optional AI reflection (per-entry, opt-in)
+- Last completed iteration: J7 — Journaling streak tracker
 - Status: Complete
 - What changed:
-  - **Per-entry AI reflection:** Added `POST /api/v1/patient/diary/{entry_id}/reflect` endpoint that generates a compassionate, supportive reflection on a specific diary entry using Groq API. Only triggered by explicit user action (never automatic).
-  - **Frontend:** "🤖 Reflect" button on each diary entry opens a modal showing the entry content and AI-generated reflection. Reflection modal includes entry context, loading spinner, and close button.
-  - **Safety & privacy:** Reflection only triggered by explicit user click; no auto-analysis; entry content only sent to AI when user explicitly requests it; no data stored from reflection; users can only reflect on their own entries (404 for other users' entries).
-  - **Backend:** New `generate_diary_reflection()` function using Groq `openai/gpt-oss-20b` with supportive system prompt; fallback message if API unavailable; proper ownership checks (404 for non-existent or other users' entries).
+  - **Journaling streak tracker:** Added streak tracking for diary entries. New `GET /api/v1/patient/diary/streak` endpoint returns current streak, longest streak, and last entry date. Streak logic: current streak counts consecutive days ending today or yesterday; longest streak is the maximum consecutive days ever achieved. Frontend shows streak badge (🔥) in diary header with current and best streaks.
+  - **Backend:** Streak calculation based on `entry_date` from diary entries. Handles gaps correctly (streak resets on gap). Returns 0 streaks for users with no entries.
+  - **Frontend:** Streak badge (🔥) displayed in diary header showing current streak and best streak. Fetched on page load via `useEffect`.
 - New/modified modules:
-  - Backend: `app/api/v1/diary.py` (reflection endpoint + Groq integration), `tests/test_diary.py` (+3 J6 tests: valid reflection, non-existent entry, cross-user access).
-  - Frontend: `pages/patient/diary/DiaryPage.tsx` (reflection button, modal, API call).
+  - Backend: `app/api/v1/diary.py` (streak endpoint + `StreakResponse` schema), `tests/test_diary.py` (+4 J7 tests: no entries, single entry, consecutive days, broken streak).
+  - Frontend: `pages/patient/diary/DiaryPage.tsx` (streak state, fetch, header badge).
 - Verification:
-  - Backend full suite: **124 passed** (was 121; +3 J6 tests: valid reflection, non-existent entry 404, cross-user 404).
+  - Backend full suite: **128 passed** (was 124; +4 J7 tests: no entries, single entry, consecutive days, broken streak).
   - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only.
-  - Live smoke: Reflection button works; modal shows entry + AI response; other users cannot access; non-existent returns 404.
-- Known issues / follow-ups: Groq API key required for full functionality (falls back gracefully). Next: J7 — Journaling streak tracker (`feature/j7-diary-streak`).
-- Next: J7.
+  - Live smoke: Streak badge shows correctly; consecutive days tracked; gaps reset current streak; longest streak preserved.
+- Known issues / follow-ups: None. Next: K1 — Scheduling UI overhaul (`feature/k1-scheduling-layout`).
+- Next: K1.
