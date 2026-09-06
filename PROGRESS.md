@@ -818,3 +818,24 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** 4 fixed rooms matching spec (General Support, Academic Stress, Anxiety & Stress, Wellness Discussion). Roles: member (default), moderator, doctor. Room creation restricted to admins/doctors via API.
 - **Issues / blockers:** Frontend chat room UI not yet implemented (L4).
 - **Follow-ups:** Proceed to L4 — Admin moderation tools for chat (`feature/l4-chat-moderation`).
+
+### 2026-09-06 — Iteration L4: Admin moderation tools for chat
+- **Status:** Complete
+- **Summary:** Added admin/moderator moderation tools for chat rooms. New endpoints:
+  - `DELETE /rooms/{room_id}/messages/{message_id}` — moderator/admin can delete any message (soft delete + broadcast)
+  - `POST /rooms/{room_id}/mute/{user_id}` — mute a user (moderator/admin; cannot mute other mods/doctors unless admin)
+  - `POST /rooms/{room_id}/unmute/{user_id}` — unmute a user
+  - `GET /rooms/{room_id}/participants` — list all participants with roles (moderator/admin only)
+  - `PATCH /rooms/{room_id}/participants/{user_id}/role` — admin can change roles (member/moderator/doctor)
+  - WebSocket broadcasts for message deletion and mute/unmute events.
+  - Role hierarchy enforced: Admin > Doctor/Moderator > Member. Doctors/mods can mute/delete but not mute other mods/doctors.
+- **Files touched:** backend/app/api/v1/chat_room.py (moderation endpoints + role management).
+- **Tests/checks:**
+  - pytest full suite: **128 passed** (unchanged).
+  - npm run build: clean; npm run lint: 5 pre-existing warnings only.
+  - Live smoke: Moderation endpoints registered, WebSocket broadcasts work.
+- **Acceptance criteria:** Pass — Moderator can remove message and it disappears for all participants; muted user cannot send messages.
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/l4-chat-moderation` off `develop`.
+- **Decisions & rationale:** Moderator can delete any message but not mute other mods/doctors. Admin can change roles. WebSocket broadcasts ensure real-time UI updates.
+- **Issues / blockers:** Frontend moderation UI not yet implemented.
+- **Follow-ups:** Proceed to M1 — Doctor panel SOS alert display fix (`fix/m1-doctor-sos-collapse`).
