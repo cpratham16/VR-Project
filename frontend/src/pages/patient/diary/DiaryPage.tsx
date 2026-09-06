@@ -69,6 +69,7 @@ export default function DiaryPage() {
   const [reflectionEntry, setReflectionEntry] = useState<DiaryEntry | null>(null);
   const [reflectionText, setReflectionText] = useState('');
   const [reflectionLoading, setReflectionLoading] = useState(false);
+  const [streak, setStreak] = useState<{ current: number; longest: number; lastEntry: string | null } | null>(null);
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -128,6 +129,19 @@ export default function DiaryPage() {
       setError(err.response?.data?.detail || 'Failed to remove PIN');
     }
   };
+
+  const fetchStreak = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/patient/diary/streak');
+      setStreak(res.data);
+    } catch {
+      // Silently ignore streak fetch errors
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStreak();
+  }, [fetchStreak]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -278,6 +292,13 @@ export default function DiaryPage() {
           <p className="text-sm text-gray-600 mt-1">Your personal journal — only you can see this.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          {streak && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 rounded-lg border border-accent/20">
+              <span className="text-lg">🔥</span>
+              <span className="text-sm font-semibold text-accent">Current: {streak.current} days</span>
+              <span className="text-xs text-gray-500">(Best: {streak.longest})</span>
+            </div>
+          )}
           <div className="flex border border-gray-300 rounded-md overflow-hidden">
             <Button
               variant={viewMode === 'list' ? 'primary' : 'outline'}
