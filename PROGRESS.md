@@ -692,3 +692,17 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** 6-week grid (42 cells) ensures consistent height. Date click switches to list view rather than modal — keeps single-page flow. Entry count badge avoids clutter. New entry pre-fills selected date for natural workflow.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to J3 — Search & filter (`feature/j3-diary-search`).
+
+### 2026-09-06 — Iteration J3: Search & filter
+- **Status:** Complete
+- **Summary:** Added keyword search and emotion tag filtering to diary. Backend: list endpoint accepts `q` (case-insensitive search in title+content) and `emotion_tag` (exact match) query params. Added `emotion_tag` column to `DiaryEntry` model with Alembic migration. Updated schemas to include optional `emotion_tag` on create/update/response. Frontend: search input + emotion filter dropdown in header, results update reactively via `useCallback` + `useEffect`, entries display emotion tag badge when present.
+- **Files touched:** backend/app/models/diary.py, backend/app/schemas/diary.py, backend/app/api/v1/diary.py, backend/alembic/versions/3b56934ec7b0_add_emotion_tag_to_diary_entries.py, backend/tests/test_diary.py (+3 J3 tests); frontend/src/pages/patient/diary/DiaryPage.tsx (search input, emotion filter select, emotion tag badge, useCallback fetch).
+- **Tests/checks:**
+  - pytest full suite: **117 passed** (was 114; +3 J3 tests: keyword search in title/content, emotion_tag exact filter, combined search+filter).
+  - npm run build: clean; npm run lint: 5 pre-existing warnings only.
+  - Live smoke: search filters instantly; emotion tag dropdown filters correctly; combined query narrows results; emotion badge shows on tagged entries.
+- **Acceptance criteria:** Pass — keyword search returns matching entries; filters narrow results correctly.
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j3-diary-search` off `develop`.
+- **Decisions & rationale:** Search is server-side for scalability; emotion_tag filter uses exact match (prepares for J4 tagging UI). Frontend uses useCallback to avoid exhaustive-deps warning while keeping reactive updates. Combined query uses AND logic for precision.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to J4 — Optional emotion tagging UI (`feature/j4-diary-emotion-tags`).

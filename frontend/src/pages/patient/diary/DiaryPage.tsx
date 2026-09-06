@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { apiClient } from '../../../api/client';
 import { Card, Button, Input, Textarea } from '../../../components/ui';
 
@@ -7,6 +7,7 @@ interface DiaryEntry {
   title: string | null;
   content: string;
   entry_date: string;
+  emotion_tag: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -15,9 +16,12 @@ interface DiaryFormData {
   title: string;
   content: string;
   entry_date: string;
+  emotion_tag: string;
 }
 
 type ViewMode = 'list' | 'calendar';
+
+const EMOTION_TAGS = ['happy', 'calm', 'sad', 'anxious', 'stressed', 'grateful', 'angry', 'excited', 'lonely', 'hopeful'];
 
 export default function DiaryPage() {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
@@ -29,27 +33,33 @@ export default function DiaryPage() {
     title: '',
     content: '',
     entry_date: new Date().toISOString().slice(0, 16),
+    emotion_tag: '',
   });
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [emotionFilter, setEmotionFilter] = useState('');
 
-  const fetchEntries = async () => {
+  const fetchEntries = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await apiClient.get('/patient/diary/');
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('q', searchQuery);
+      if (emotionFilter) params.append('emotion_tag', emotionFilter);
+      const res = await apiClient.get(`/patient/diary/?${params.toString()}`);
       setEntries(res.data);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load diary entries');
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, emotionFilter]);
 
   useEffect(() => {
     fetchEntries();
-  }, []);
+  }, [fetchEntries]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +77,7 @@ export default function DiaryPage() {
       }
       setShowForm(false);
       setEditingEntry(null);
-      setFormData({ title: '', content: '', entry_date: new Date().toISOString().slice(0, 16) });
+      setFormData({ title: '', content: '', entry_date: new Date().toISOString().slice(0, 16), emotion_tag: '' });
       fetchEntries();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to save entry');
@@ -82,6 +92,7 @@ export default function DiaryPage() {
       title: entry.title || '',
       content: entry.content,
       entry_date: entry.entry_date.slice(0, 16),
+      emotion_tag: entry.emotion_tag || '',
     });
     setShowForm(true);
   };
@@ -101,7 +112,7 @@ export default function DiaryPage() {
     setEditingEntry(null);
     const now = new Date();
     setSelectedDate(now);
-    setFormData({ title: '', content: '', entry_date: now.toISOString().slice(0, 16) });
+    setFormData({ title: '', content: '', entry_date: now.toISOString().slice(0, 16), emotion_tag: '' });
     setShowForm(true);
   };
 
@@ -192,6 +203,23 @@ export default function DiaryPage() {
               Calendar
             </Button>
           </div>
+          <Input
+            type="search"
+            placeholder="Search entries..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-64"
+          />
+          <select
+            value={emotionFilter}
+            onChange={(e) => setEmotionFilter(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-accent"
+          >
+            <option value="">All emotions</option>
+            {EMOTION_TAGS.map((tag) => (
+              <option key={tag} value={tag}>{tag.charAt(0).toUpperCase() + tag.slice(1)}</option>
+            ))}
+          </select>
           <Button onClick={handleNewEntry} variant="primary" size="md">
             New Entry
           </Button>
@@ -225,6 +253,16 @@ export default function DiaryPage() {
               value={formData.entry_date}
               onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
             />
+            <select
+              value={formData.emotion_tag}
+              onChange={(e) => setFormData({ ...formData, emotion_tag: e.target.value })}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-accent w-full"
+            >
+              <option value="">No emotion tag</option>
+              {EMOTION_TAGS.map((tag) => (
+                <option key={tag} value={tag}>{tag.charAt(0).toUpperCase() + tag.slice(1)}</option>
+              ))}
+            </select>
             <div className="flex justify-end space-x-3 pt-2">
               <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setEditingEntry(null); }}>Cancel</Button>
               <Button type="submit" variant="primary" isLoading={loading}>
@@ -306,9 +344,16 @@ export default function DiaryPage() {
                     <div className="flex-1">
                       {entry.title && <h4 className="font-semibold text-gray-800">{entry.title}</h4>}
                       <p className="text-gray-700 whitespace-pre-wrap mt-1">{entry.content}</p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        {formatDate(entry.entry_date)} · {formatTime(entry.entry_date)} · Updated {new Date(entry.updated_at).toLocaleString()}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <p className="text-xs text-gray-500">
+                          {formatDate(entry.entry_date)} · {formatTime(entry.entry_date)} · Updated {new Date(entry.updated_at).toLocaleString()}
+                        </p>
+                        {entry.emotion_tag && (
+                          <span className="px-2 py-0.5 text-xs bg-accent/10 text-accent rounded-full">
+                            {entry.emotion_tag.charAt(0).toUpperCase() + entry.emotion_tag.slice(1)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(entry)}>Edit</Button>
@@ -326,9 +371,16 @@ export default function DiaryPage() {
                     <div className="flex-1">
                       {entry.title && <h4 className="font-semibold text-gray-800">{entry.title}</h4>}
                       <p className="text-gray-700 whitespace-pre-wrap mt-1">{entry.content}</p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        {formatDate(entry.entry_date)} · {formatTime(entry.entry_date)} · Updated {new Date(entry.updated_at).toLocaleString()}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <p className="text-xs text-gray-500">
+                          {formatDate(entry.entry_date)} · {formatTime(entry.entry_date)} · Updated {new Date(entry.updated_at).toLocaleString()}
+                        </p>
+                        {entry.emotion_tag && (
+                          <span className="px-2 py-0.5 text-xs bg-accent/10 text-accent rounded-full">
+                            {entry.emotion_tag.charAt(0).toUpperCase() + entry.emotion_tag.slice(1)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(entry)}>Edit</Button>
@@ -351,9 +403,16 @@ export default function DiaryPage() {
                     <div className="flex-1">
                       {entry.title && <h4 className="font-semibold text-gray-800">{entry.title}</h4>}
                       <p className="text-gray-700 whitespace-pre-wrap mt-1">{entry.content}</p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        {formatDate(entry.entry_date)} · {formatTime(entry.entry_date)} · Updated {new Date(entry.updated_at).toLocaleString()}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <p className="text-xs text-gray-500">
+                          {formatDate(entry.entry_date)} · {formatTime(entry.entry_date)} · Updated {new Date(entry.updated_at).toLocaleString()}
+                        </p>
+                        {entry.emotion_tag && (
+                          <span className="px-2 py-0.5 text-xs bg-accent/10 text-accent rounded-full">
+                            {entry.emotion_tag.charAt(0).toUpperCase() + entry.emotion_tag.slice(1)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(entry)}>Edit</Button>

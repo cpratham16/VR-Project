@@ -12,5 +12,6 @@ class DiaryEntry(Base):
     title = Column(String(255), nullable=True)
     content = Column(Text, nullable=False)
     entry_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    emotion_tag = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

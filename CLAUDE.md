@@ -1,15 +1,16 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: J2 — Calendar dashboard view
+- Last completed iteration: J3 — Search & filter
 - Status: Complete
 - What changed:
-  - **Diary Calendar view:** `DiaryPage.tsx` now has a toggleable Calendar/List view. The calendar renders a 6-week month grid with 📖 marker on days containing ≥1 entry, entry count badge for multiple entries, month navigation (Prev/Next), and today ring highlight. Clicking a date filters the list view to that date's entries. List view shows a "Entries for [date]" banner with clear filter button when a date is selected.
-  - **Enhanced UX:** New entry defaults to selected date (or today); entry date picker in form; time display in list entries.
+  - **Diary search & filter:** Backend list endpoint now supports `q` (keyword search in title + content) and `emotion_tag` filter. Added `emotion_tag` column to `DiaryEntry` model with migration. Frontend `DiaryPage.tsx` gains search input and emotion filter dropdown in header; results update reactively via `useCallback` + `useEffect`. Entries display emotion tag badge when set.
+  - **Schema updates:** `DiaryEntryCreate/Update/Response` now include optional `emotion_tag` (max 50 chars).
 - New/modified modules:
-  - Frontend: `pages/patient/diary/DiaryPage.tsx` (major refactor: +Calendar view, view toggle, date filter).
+  - Backend: `app/models/diary.py` (emotion_tag), `app/schemas/diary.py` (emotion_tag in all schemas), `app/api/v1/diary.py` (search/filter params, emotion_tag on create/update), migration `3b56934ec7b0`, `tests/test_diary.py` (+3 J3 tests: keyword search, emotion_tag filter, combined).
+  - Frontend: `pages/patient/diary/DiaryPage.tsx` (search input, emotion filter select, useCallback fetch, emotion tag badge on entries).
 - Verification:
-  - Backend full suite: **114 passed** (unchanged).
-  - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing + 1 new (unused var) → fixed.
-  - Live smoke: calendar renders correctly; date click filters list; month navigation works; multiple same-day entries show count badge.
-- Known issues / follow-ups: None. Next: J3 — Search & filter (`feature/j3-diary-search`).
-- Next: J3.
+  - Backend full suite: **117 passed** (was 114; +3 J3 tests: keyword search, emotion_tag filter, combined search+filter).
+  - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only.
+  - Live smoke: keyword search filters results in real-time; emotion tag filter works; combined query narrows correctly; emotion tag badge displays on entries.
+- Known issues / follow-ups: None. Next: J4 — Optional emotion tagging UI (`feature/j4-diary-emotion-tags`).
+- Next: J4.

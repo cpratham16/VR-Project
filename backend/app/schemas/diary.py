@@ -7,11 +7,13 @@ class DiaryEntryCreate(BaseModel):
     title: Optional[str] = Field(None, max_length=255)
     content: str = Field(..., min_length=1)
     entry_date: Optional[datetime] = None
+    emotion_tag: Optional[str] = Field(None, max_length=50)
 
 class DiaryEntryUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=255)
     content: Optional[str] = Field(None, min_length=1)
     entry_date: Optional[datetime] = None
+    emotion_tag: Optional[str] = Field(None, max_length=50)
 
 class DiaryEntryResponse(BaseModel):
     id: UUID
@@ -19,6 +21,7 @@ class DiaryEntryResponse(BaseModel):
     title: Optional[str]
     content: str
     entry_date: datetime
+    emotion_tag: Optional[str]
     created_at: datetime
     updated_at: datetime
 

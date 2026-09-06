@@ -1,4 +1,6 @@
-"""J1 — Diary CRUD endpoint tests."""
+"""J1 — Diary CRUD endpoint tests.
+J3 — Search & filter tests.
+"""
 import uuid
 from datetime import datetime, timedelta
 import pytest
@@ -196,5 +198,139 @@ async def test_multiple_entries_same_day():
         assert res.status_code == 200
         data = res.json()
         assert len(data) == 5
+
+    await _delete_user_and_entries(email)
+
+
+# J3: Search & filter tests
+@pytest.mark.asyncio
+async def test_search_diary_entries_by_keyword():
+    email = f"j3_search_{uuid.uuid4().hex[:6]}@test.com"
+    user = await _create_patient(email)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        login = await ac.post("/api/v1/auth/login", data={"username": email, "password": "secret123"})
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        # Create entries with searchable content
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Happy Day",
+            "content": "Feeling great today",
+            "entry_date": "2026-09-06T12:00:00"
+        }, headers=headers)
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Sad News",
+            "content": "Not a good day",
+            "entry_date": "2026-09-07T12:00:00"
+        }, headers=headers)
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Neutral",
+            "content": "Just an ordinary day",
+            "entry_date": "2026-09-08T12:00:00"
+        }, headers=headers)
+
+        # Search by keyword in content
+        res = await ac.get("/api/v1/patient/diary/?q=great", headers=headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data) == 1
+        assert data[0]["title"] == "Happy Day"
+
+        # Search by keyword in title
+        res2 = await ac.get("/api/v1/patient/diary/?q=Sad", headers=headers)
+        assert res2.status_code == 200
+        data2 = res2.json()
+        assert len(data2) == 1
+        assert data2[0]["title"] == "Sad News"
+
+        # Search with no matches
+        res3 = await ac.get("/api/v1/patient/diary/?q=nonexistent", headers=headers)
+        assert res3.status_code == 200
+        assert len(res3.json()) == 0
+
+    await _delete_user_and_entries(email)
+
+
+@pytest.mark.asyncio
+async def test_filter_diary_entries_by_emotion_tag():
+    email = f"j3_filter_{uuid.uuid4().hex[:6]}@test.com"
+    user = await _create_patient(email)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        login = await ac.post("/api/v1/auth/login", data={"username": email, "password": "secret123"})
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        # Create entries with emotion tags
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Happy",
+            "content": "Feeling happy",
+            "entry_date": "2026-09-06T12:00:00",
+            "emotion_tag": "happy"
+        }, headers=headers)
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Anxious",
+            "content": "Feeling anxious",
+            "entry_date": "2026-09-07T12:00:00",
+            "emotion_tag": "anxious"
+        }, headers=headers)
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Neutral",
+            "content": "No emotion",
+            "entry_date": "2026-09-08T12:00:00"
+        }, headers=headers)
+
+        # Filter by emotion_tag
+        res = await ac.get("/api/v1/patient/diary/?emotion_tag=happy", headers=headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data) == 1
+        assert data[0]["emotion_tag"] == "happy"
+
+        res2 = await ac.get("/api/v1/patient/diary/?emotion_tag=anxious", headers=headers)
+        assert res2.status_code == 200
+        data2 = res2.json()
+        assert len(data2) == 1
+        assert data2[0]["emotion_tag"] == "anxious"
+
+        # Filter with no matches
+        res3 = await ac.get("/api/v1/patient/diary/?emotion_tag=sad", headers=headers)
+        assert res3.status_code == 200
+        assert len(res3.json()) == 0
+
+    await _delete_user_and_entries(email)
+
+
+@pytest.mark.asyncio
+async def test_combined_search_and_filter():
+    email = f"j3_combined_{uuid.uuid4().hex[:6]}@test.com"
+    user = await _create_patient(email)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        login = await ac.post("/api/v1/auth/login", data={"username": email, "password": "secret123"})
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Happy Day 1",
+            "content": "Great day",
+            "emotion_tag": "happy"
+        }, headers=headers)
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Happy Day 2",
+            "content": "Wonderful day",
+            "emotion_tag": "happy"
+        }, headers=headers)
+        await ac.post("/api/v1/patient/diary/", json={
+            "title": "Sad Day",
+            "content": "Terrible day",
+            "emotion_tag": "sad"
+        }, headers=headers)
+
+        # Combined search + filter
+        res = await ac.get("/api/v1/patient/diary/?q=day&emotion_tag=happy", headers=headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data) == 2
+        assert all(d["emotion_tag"] == "happy" for d in data)
+        assert all("day" in (d["title"] or "").lower() or "day" in (d["content"] or "").lower() for d in data)
 
     await _delete_user_and_entries(email)
