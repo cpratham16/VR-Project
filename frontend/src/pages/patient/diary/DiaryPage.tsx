@@ -21,7 +21,18 @@ interface DiaryFormData {
 
 type ViewMode = 'list' | 'calendar';
 
-const EMOTION_TAGS = ['happy', 'calm', 'sad', 'anxious', 'stressed', 'grateful', 'angry', 'excited', 'lonely', 'hopeful'];
+const EMOTION_TAGS = [
+  { value: 'happy', label: 'Happy', emoji: '😊' },
+  { value: 'calm', label: 'Calm', emoji: '😌' },
+  { value: 'sad', label: 'Sad', emoji: '😢' },
+  { value: 'anxious', label: 'Anxious', emoji: '😰' },
+  { value: 'stressed', label: 'Stressed', emoji: '😫' },
+  { value: 'grateful', label: 'Grateful', emoji: '🙏' },
+  { value: 'angry', label: 'Angry', emoji: '😠' },
+  { value: 'excited', label: 'Excited', emoji: '🤩' },
+  { value: 'lonely', label: 'Lonely', emoji: '😔' },
+  { value: 'hopeful', label: 'Hopeful', emoji: '🌱' },
+];
 
 export default function DiaryPage() {
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
@@ -210,14 +221,14 @@ export default function DiaryPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-64"
           />
-          <select
+<select
             value={emotionFilter}
             onChange={(e) => setEmotionFilter(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-accent"
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-accent w-full"
           >
             <option value="">All emotions</option>
             {EMOTION_TAGS.map((tag) => (
-              <option key={tag} value={tag}>{tag.charAt(0).toUpperCase() + tag.slice(1)}</option>
+              <option key={tag.value} value={tag.value}>{tag.emoji} {tag.label}</option>
             ))}
           </select>
           <Button onClick={handleNewEntry} variant="primary" size="md">
@@ -253,16 +264,38 @@ export default function DiaryPage() {
               value={formData.entry_date}
               onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
             />
-            <select
-              value={formData.emotion_tag}
-              onChange={(e) => setFormData({ ...formData, emotion_tag: e.target.value })}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-accent w-full"
-            >
-              <option value="">No emotion tag</option>
-              {EMOTION_TAGS.map((tag) => (
-                <option key={tag} value={tag}>{tag.charAt(0).toUpperCase() + tag.slice(1)}</option>
-              ))}
-            </select>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Emotion Tag (optional)</label>
+              <div className="grid grid-cols-5 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, emotion_tag: '' })}
+                  className={`p-3 rounded-lg border-2 text-center transition ${
+                    formData.emotion_tag === ''
+                      ? 'border-accent bg-accent/10'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="text-lg">✕</span>
+                  <p className="text-xs text-gray-500 mt-1">None</p>
+                </button>
+                {EMOTION_TAGS.map((tag) => (
+                  <button
+                    key={tag.value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, emotion_tag: tag.value })}
+                    className={`p-3 rounded-lg border-2 text-center transition ${
+                      formData.emotion_tag === tag.value
+                        ? 'border-accent bg-accent/10'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="text-2xl">{tag.emoji}</span>
+                    <p className="text-xs text-gray-700 mt-1 capitalize">{tag.label}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="flex justify-end space-x-3 pt-2">
               <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setEditingEntry(null); }}>Cancel</Button>
               <Button type="submit" variant="primary" isLoading={loading}>
