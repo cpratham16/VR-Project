@@ -140,11 +140,11 @@ export default function PatientAppointmentsPage() {
     : 0;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-8">
       <SectionHeading
         eyebrow="Appointments"
         title="Schedule a counseling session"
-        description="Choose a verified counselor near you and request a slot that works for you."
+        description="Choose a verified counselor and request a slot that works for you."
       />
 
       {error && (
@@ -158,180 +158,190 @@ export default function PatientAppointmentsPage() {
         </div>
       )}
 
-      {/* Doctor directory */}
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-base font-bold text-slate-900">Choose your counselor</h3>
-          <button
-            onClick={() => setBroaden((b) => !b)}
-            className="cursor-pointer rounded-full border border-[#e8e4df] bg-muted px-4 py-1.5 text-xs font-bold text-accent transition-colors hover:bg-teal-100"
-            aria-pressed={broaden}
-          >
-            {broaden ? '← Back to my region only' : `Show counselors in other regions${loc?.state ? ` (outside ${loc.state})` : ''}`}
-          </button>
-        </div>
-
-        {loc && (loc.city || loc.state) && (
-          <p className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-            📍{' '}
-            {broaden ? (
-              <>Showing all regions — counselors near <span className="font-semibold text-slate-700">{[loc.city, loc.state].filter(Boolean).join(', ')}</span> are listed first</>
-            ) : (
-              <>Showing counselors near <span className="font-semibold text-slate-700">{[loc.city, loc.state].filter(Boolean).join(', ')}</span></>
-            )}
-            {!broaden && localCount === 0 && (
-              <span className="text-amber-600">· none in your area yet — broaden to see everyone</span>
-            )}
-          </p>
-        )}
-
-        <div className="space-y-2">
-          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600">
-            Filter by language spoken
-            {languageFilter && (
+      {/* Main layout: Left sidebar (Doctor directory) + Right panel (Booking form) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+        {/* Left: Doctor Directory */}
+        <aside className="lg:sticky lg:top-24 space-y-6">
+          <section className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-base font-bold text-slate-900">Choose your counselor</h3>
               <button
-                onClick={() => setLanguageFilter('')}
-                className="ml-2 cursor-pointer rounded-full bg-teal-600 px-2.5 py-0.5 text-[10px] font-bold normal-case tracking-normal text-white transition-colors hover:bg-accent-secondary"
+                onClick={() => setBroaden((b) => !b)}
+                className="cursor-pointer rounded-full border border-[#e8e4df] bg-muted px-4 py-1.5 text-xs font-bold text-accent transition-colors hover:bg-teal-100"
+                aria-pressed={broaden}
               >
-                {languageFilter} ✕
+                {broaden ? '← Back to my region only' : `Show counselors in other regions${loc?.state ? ` (outside ${loc.state})` : ''}`}
               </button>
-            )}
-          </p>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Language filter">
-            {LANGUAGES_SPOKEN.map((lang) => {
-              const active = languageFilter === lang;
-              return (
-                <button
-                  key={lang}
-                  onClick={() => setLanguageFilter(active ? '' : lang)}
-                  aria-pressed={active}
-                  className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-all ${
-                    active
-                      ? 'border-accent bg-accent text-white shadow-sm'
-                      : 'border-[#e8e4df] bg-white text-slate-600 hover:border-[#d6cfc7] hover:bg-muted'
-                  }`}
-                >
-                  {lang}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {!directory ? (
-          <p className="text-sm text-slate-400">Loading counselors…</p>
-        ) : directory.doctors.length === 0 ? (
-          <Card variant="outline" className="p-8 text-center">
-            <p className="text-sm text-slate-500">
-              {languageFilter ? (
-                <>
-                  No <span className="font-semibold text-slate-700">{languageFilter}</span>-speaking counselors found{' '}
-                  {broaden ? 'anywhere yet.' : 'in your region yet — try broadening the search to other regions.'}
-                </>
-              ) : (
-                'No verified counselors found in your area yet. Try broadening the search to other regions.'
-              )}
-            </p>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {directory.doctors.map((doc) => {
-              const isSelected = selectedDoctor?.id === doc.id;
-              const isLocal = !!loc?.state && doc.state === loc.state && !!loc?.city && doc.city === loc.city;
-              return (
-                <Card
-                  key={doc.id}
-                  hoverEffect
-                  onClick={() => setSelectedDoctor(isSelected ? null : doc)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelectedDoctor(isSelected ? null : doc)}
-                  aria-pressed={isSelected}
-                  className={`cursor-pointer ${isSelected ? 'border-teal-500 ring-2 ring-accent/20/25' : ''}`}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="mb-2 flex items-start justify-between gap-2">
-                      <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-muted to-[#efe9df] text-lg">
-                        🩺
-                      </span>
-                      <Badge variant={isSelected ? 'primary' : isLocal ? 'success' : 'neutral'} size="sm" dot={isSelected}>
-                        {isSelected ? 'Selected' : isLocal ? 'Near you' : broaden ? 'Other region' : 'Your state'}
-                      </Badge>
-                    </div>
-                    <CardTitle className="text-[15px]">{doc.full_name || 'Counselor'}</CardTitle>
-                    <CardDescription className="text-xs">
-                      {doc.specialty || 'Mental health professional'}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2 pt-0">
-                    <p className="flex items-center gap-1 text-xs font-medium text-slate-500">📍 {[doc.city, doc.state].filter(Boolean).join(', ')}</p>
-                    {doc.languages.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {doc.languages.map((lang) => (
-                          <span key={lang} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
-                            {lang}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* Booking form */}
-      <Card variant="elevated">
-        <CardHeader>
-          <CardTitle>Request a session</CardTitle>
-          <CardDescription>
-            {selectedDoctor
-              ? `Your request will go directly to ${selectedDoctor.full_name}.`
-              : 'No counselor selected — the platform will match you with an available professional.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleBook} className="space-y-4">
-            <Input
-              label="Preferred date & time"
-              required
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-              className="sm:max-w-xs"
-            />
-            <Textarea
-              label="Reason / session notes"
-              rows={2}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Follow-up on PHQ-9 results, coping strategies, or stress management..."
-            />
-            <div className="max-w-xs">
-              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600">
-                Preferred mode
-              </label>
-              <select
-                value={preferredMode}
-                onChange={(e) => setPreferredMode(e.target.value)}
-                className="w-full cursor-pointer appearance-none rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm shadow-xs transition-all hover:border-slate-300 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/15"
-              >
-                <option value="any">No preference</option>
-                <option value="in_person">In person</option>
-                <option value="video_call">Video call</option>
-                <option value="chat">Chat consultation</option>
-              </select>
             </div>
-            <Button type="submit" isLoading={loading} size="lg">
-              Submit appointment request
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
 
-      {/* Appointment history */}
+            {loc && (loc.city || loc.state) && (
+              <p className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                📍{' '}
+                {broaden ? (
+                  <>Showing all regions — counselors near <span className="font-semibold text-slate-700">{[loc.city, loc.state].filter(Boolean).join(', ')}</span> are listed first</>
+                ) : (
+                  <>Showing counselors near <span className="font-semibold text-slate-700">{[loc.city, loc.state].filter(Boolean).join(', ')}</span></>
+                )}
+                {!broaden && localCount === 0 && (
+                  <span className="text-amber-600">· none in your area yet — broaden to see everyone</span>
+                )}
+              </p>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600">
+                Filter by language spoken
+                {languageFilter && (
+                  <button
+                    onClick={() => setLanguageFilter('')}
+                    className="ml-2 cursor-pointer rounded-full bg-teal-600 px-2.5 py-0.5 text-[10px] font-bold normal-case tracking-normal text-white transition-colors hover:bg-accent-secondary"
+                  >
+                    {languageFilter} ✕
+                  </button>
+                )}
+              </p>
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Language filter">
+                {LANGUAGES_SPOKEN.map((lang) => {
+                  const active = languageFilter === lang;
+                  return (
+                    <button
+                      key={lang}
+                      onClick={() => setLanguageFilter(active ? '' : lang)}
+                      aria-pressed={active}
+                      className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-all ${
+                        active
+                          ? 'border-accent bg-accent text-white shadow-sm'
+                          : 'border-[#e8e4df] bg-white text-slate-600 hover:border-[#d6cfc7] hover:bg-muted'
+                      }`}
+                    >
+                      {lang}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* Doctor cards list */}
+          <section className="space-y-3">
+            {!directory ? (
+              <p className="text-sm text-slate-400">Loading counselors…</p>
+            ) : directory.doctors.length === 0 ? (
+              <Card variant="outline" className="p-8 text-center">
+                <p className="text-sm text-slate-500">
+                  {languageFilter ? (
+                    <>
+                      No <span className="font-semibold text-slate-700">{languageFilter}</span>-speaking counselors found{' '}
+                      {broaden ? 'anywhere yet.' : 'in your region yet — try broadening the search to other regions.'}
+                    </>
+                  ) : (
+                    'No verified counselors found in your area yet. Try broadening the search to other regions.'
+                  )}
+                </p>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {directory.doctors.map((doc) => {
+                  const isSelected = selectedDoctor?.id === doc.id;
+                  const isLocal = !!loc?.state && doc.state === loc.state && !!loc?.city && doc.city === loc.city;
+                  return (
+                    <Card
+                      key={doc.id}
+                      hoverEffect
+                      onClick={() => setSelectedDoctor(isSelected ? null : doc)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelectedDoctor(isSelected ? null : doc)}
+                      aria-pressed={isSelected}
+                      className={`cursor-pointer ${isSelected ? 'border-teal-500 ring-2 ring-accent/20/25' : ''}`}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="mb-2 flex items-start justify-between gap-2">
+                          <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-muted to-[#efe9df] text-lg">
+                            🩺
+                          </span>
+                          <Badge variant={isSelected ? 'primary' : isLocal ? 'success' : 'neutral'} size="sm" dot={isSelected}>
+                            {isSelected ? 'Selected' : isLocal ? 'Near you' : broaden ? 'Other region' : 'Your state'}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-[15px]">{doc.full_name || 'Counselor'}</CardTitle>
+                        <CardDescription className="text-xs">
+                          {doc.specialty || 'Mental health professional'}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-2 pt-0">
+                        <p className="flex items-center gap-1 text-xs font-medium text-slate-500">📍 {[doc.city, doc.state].filter(Boolean).join(', ')}</p>
+                        {doc.languages.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {doc.languages.map((lang) => (
+                              <span key={lang} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                                {lang}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </aside>
+
+        {/* Right: Booking Form */}
+        <main className="space-y-6">
+          <Card variant="elevated">
+            <CardHeader>
+              <CardTitle>Request a session</CardTitle>
+              <CardDescription>
+                {selectedDoctor
+                  ? `Your request will go directly to ${selectedDoctor.full_name}.`
+                  : 'No counselor selected — the platform will match you with an available professional.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleBook} className="space-y-4">
+                <Input
+                  label="Preferred date & time"
+                  required
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={(e) => setScheduledAt(e.target.value)}
+                  className="sm:max-w-xs"
+                />
+                <Textarea
+                  label="Reason / session notes"
+                  rows={2}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="e.g. Follow-up on PHQ-9 results, coping strategies, or stress management..."
+                />
+                <div className="max-w-xs">
+                  <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600">
+                    Preferred mode
+                  </label>
+                  <select
+                    value={preferredMode}
+                    onChange={(e) => setPreferredMode(e.target.value)}
+                    className="w-full cursor-pointer appearance-none rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm shadow-xs transition-all hover:border-slate-300 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/15"
+                  >
+                    <option value="any">No preference</option>
+                    <option value="in_person">In person</option>
+                    <option value="video_call">Video call</option>
+                    <option value="chat">Chat consultation</option>
+                  </select>
+                </div>
+                <Button type="submit" isLoading={loading} size="lg" className="w-full">
+                  Submit appointment request
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+
+      {/* Bottom: My Appointments */}
       <section className="space-y-4">
         <h3 className="text-base font-bold text-slate-900">My appointments</h3>
         {fetching ? (
