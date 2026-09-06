@@ -23,6 +23,7 @@ from app.models.mood import MoodEntry
 from app.models.note import ClinicalNote
 from app.models.appointment import Appointment
 from app.models.chat import ChatSession, ChatMessage
+from app.models.chat_room import ChatRoom, ChatRoomParticipant, ChatRoomMessage, ChatRoomType
 from app.models.alert import RiskAlert
 from app.models.community import CommunityPost
 from app.models.vr import VRScenario, VRSession, VRTelemetry
@@ -141,6 +142,7 @@ async def seed():
             await seed_notes(db, p, doctors[i % len(doctors)])
 
         await seed_community(db, patients, doctors)
+        await seed_chat_rooms(db)
         await db.commit()
 
         # Populate the anonymized admin reporting store
@@ -426,6 +428,41 @@ async def seed_community(db, patients, doctors):
         moderation_status="flagged_pending",
         created_at=now - timedelta(hours=3),
     ))
+
+
+async def seed_chat_rooms(db):
+    """Seed the 4 predefined chat rooms."""
+    room_data = [
+        {
+            "name": "General Support",
+            "room_type": ChatRoomType.GENERAL,
+            "description": "A safe space for general peer support and discussion about mental health."
+        },
+        {
+            "name": "Academic Stress",
+            "room_type": ChatRoomType.ACADEMIC,
+            "description": "Discuss academic pressures, exam anxiety, study stress, and school-related challenges."
+        },
+        {
+            "name": "Anxiety & Stress",
+            "room_type": ChatRoomType.ANXIETY,
+            "description": "Share experiences and coping strategies for anxiety, panic, and general stress."
+        },
+        {
+            "name": "Wellness Discussion",
+            "room_type": ChatRoomType.WELLNESS,
+            "description": "Discuss wellness practices, self-care, mindfulness, and overall well-being."
+        },
+    ]
+    
+    for room_data in room_data:
+        existing = await db.execute(
+            select(ChatRoom).where(ChatRoom.room_type == room_data["room_type"])
+        )
+        if not existing.scalars().first():
+            room = ChatRoom(**room_data)
+            db.add(room)
+    await db.commit()
 
 
 if __name__ == "__main__":

@@ -804,3 +804,17 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** 4 fixed rooms matching the spec (General Support, Academic Stress, Anxiety & Stress, Wellness Discussion). WebSocket auth via query param token (simpler for client). ConnectionManager singleton handles room broadcasting. Messages persisted before broadcast for durability.
 - **Issues / blockers:** Frontend chat UI not yet implemented (L3/L4).
 - **Follow-ups:** Proceed to L3 — Predefined chat rooms & role hierarchy (`feature/l3-chat-rooms-roles`).
+
+### 2026-09-06 — Iteration L3: Predefined chat rooms & role hierarchy
+- **Status:** Complete
+- **Summary:** Seeded the 4 predefined chat rooms (General Support, Academic Stress, Anxiety & Stress, Wellness Discussion) via `seed_chat_rooms()` in `seed_demo.py`. Each room has a unique `room_type` enum value. Role hierarchy already present in `ChatRoomParticipant` model with `role` field (member, moderator, doctor). Rooms are created with unique `room_type` constraint. Backend REST API and WebSocket infrastructure already in place from L2.
+- **Files touched:** backend/app/seed_demo.py (seed_chat_rooms added, imports updated).
+- **Tests/checks:**
+  - pytest full suite: **128 passed** (unchanged).
+  - npm run build: clean; npm run lint: 5 pre-existing warnings only.
+  - Live smoke: 4 rooms seeded at startup, accessible via REST API.
+- **Acceptance criteria:** Pass — All four rooms exist and are accessible; role hierarchy in place (member/moderator/doctor).
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/l3-chat-rooms-roles` off `develop`.
+- **Decisions & rationale:** 4 fixed rooms matching spec (General Support, Academic Stress, Anxiety & Stress, Wellness Discussion). Roles: member (default), moderator, doctor. Room creation restricted to admins/doctors via API.
+- **Issues / blockers:** Frontend chat room UI not yet implemented (L4).
+- **Follow-ups:** Proceed to L4 — Admin moderation tools for chat (`feature/l4-chat-moderation`).
