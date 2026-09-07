@@ -1,24 +1,15 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–O, student panel polish onward)
-- Last completed iteration: N5 & N8 — Communication campaign engine & privacy safeguards
+- Last completed iteration: N6 & N7 — Email delivery integration & in-app notification triggers
 - Status: Complete
 - What changed:
-  - **Communication Campaign Engine:** Created database models `EmailCampaign` and `EmailRecipient` with Alembic migration (`07fb42b9f757_add_email_campaigns_and_recipients_tables.py`).
-  - Added REST endpoints under `/api/v1`:
-    - `POST /campaigns` — Admin create draft campaign
-    - `GET /campaigns` — Admin list campaigns with recipient counts
-    - `GET /campaigns/{id}` — Admin view campaign details and recipient delivery logs
-    - `PATCH /campaigns/{id}` — Admin update campaign
-    - `POST /campaigns/{id}/send` — Admin dispatch campaign now (targets audience based on role filter)
-    - `POST /patient/unsubscribe` — Patient toggle communication opt-out preference
-    - `GET /patient/unsubscribe` — Patient query communication opt-out status
-  - **Privacy Safeguards (N8):** Strict Pydantic validator restricts `audience_type` to non-clinical criteria (`all`, `students`, `doctors`, `admins`). Clinical field targeting (PHQ-9/GAD-7 scores, mood logs) is barred. Dispatches filter out users with `unsubscribed_from_communications == True`.
-  - Frontend: `CampaignsPage.tsx` under `/admin/campaigns` with creation modal, detail drawer, recipient log, and privacy guarantee notice.
+  - **Email Delivery Integration (N6):** Added `app/services/email_service.py` to handle dynamic SMTP outbound email dispatch. Wired it into `POST /campaigns/{id}/send`. Falls back cleanly to simulated logs when SMTP isn't configured, saving delivery status/errors per-recipient correctly.
+  - **In-App Notification Triggers (N7):** Upgraded `NotificationRecord` schema (nullable `alert_id`, added `link_url`). 
+  - Wired triggers so publishing a Resource or Newsletter automatically creates a broadcast in-app notification targeting "All Patients".
+  - Communication campaigns targeting "in_app" dynamically trigger notifications.
 - New/modified modules:
-  - Backend: `app/models/campaign.py`, `app/schemas/campaign.py`, `app/api/v1/campaigns.py`, `app/models/user.py`, `tests/test_campaigns.py`
-  - Frontend: `src/pages/admin/CampaignsPage.tsx`, `App.tsx`, `components/Sidebar.tsx`
+  - Backend: `app/services/email_service.py`, `app/services/notification_service.py`, `app/models/notification.py`, `tests/test_email_notifications.py`.
 - Verification:
-  - Backend full suite: **132 passed** (1 new).
-  - Frontend `npm run build`: clean.
-  - GitHub Actions CI: **Both jobs (`backend-test` & `frontend-build`) PASSED**. PR #11 merged into `develop`.
-- Next: N6 & N7 — Email delivery integration & in-app notification triggers (`feature/n6-n7-email-notifications`).
+  - Backend full suite: **134 passed** (2 new testing automatic triggers and simulated flow).
+  - GitHub Actions CI: **Both jobs PASSED**. PR #12 merged into `develop`.
+- Next: O1 — Full API Contract Test Sweep + Frontend E2E + Report.

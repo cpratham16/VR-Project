@@ -938,3 +938,19 @@ ewsletters table and admin flow for drafting, previewing, editing, and publishin
   - Standardized udience_type validator to reject any clinical field keywords at schema validation time.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to N6 & N7 - Email delivery integration & in-app notification triggers (eature/n6-n7-email-notifications).
+
+### 2026-09-07 - Iteration N6 & N7: Email delivery integration & in-app notification triggers
+- **Status:** Complete
+- **Summary:** Integrated email delivery capability (SMTP_HOST, etc. via config) handling outbound dispatch for communication campaigns with seamless fallback to simulated logs. Extended in-app NotificationRecord schema (made lert_id nullable, added link_url). Configured automatic triggers so that publishing a Resource or Newsletter, or dispatching an in-app Campaign, generates a system-wide push notification record.
+- **Files touched:** ackend/app/services/email_service.py (new), ackend/app/services/notification_service.py, ackend/app/api/v1/campaigns.py, ackend/app/api/v1/resources.py, ackend/app/api/v1/newsletters.py, ackend/app/models/notification.py, ackend/alembic/versions/b2ee7167114b..., ackend/tests/test_email_notifications.py (new).
+- **Tests/checks:**
+  - pytest tests/test_email_notifications.py: 2/2 pass.
+  - pytest full suite: **134 passed**.
+  - GitHub Actions CI: PR #12 merged into develop after both ackend-test and rontend-build jobs passed.
+- **Acceptance criteria:** Pass - Publishing resources/newsletters automatically generates linking in-app notifications; campaign dispatch records delivery success/failure properly per-user via email integration wrapper.
+- **Rules compliance:** Pass. Branch eature/n6-n7-email-notifications created, PR raised via gh, CI passed, merged into develop.
+- **Decisions & rationale:**
+  - Combined N6 & N7 into a single unified step to avoid duplicate backend context switching since both involve the notification infrastructure.
+  - Used standard smtplib for email delivery without external heavyweight dependencies (SendGrid/SES SDKs are avoided per lean dependency spec on backend).
+- **Issues / blockers:** None. Phase N is complete.
+- **Follow-ups:** Proceed to final iteration O1 - Full API contract testing & E2E verification (eature/o1-final-verification).
