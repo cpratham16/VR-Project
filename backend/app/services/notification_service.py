@@ -125,6 +125,29 @@ async def record_backup_pool_notification(db: AsyncSession, alert) -> Notificati
     return record
 
 
+async def dispatch_content_notification(
+    db: AsyncSession,
+    title: str,
+    content_type: str,  # "resource" | "newsletter" | "announcement"
+    link_url: str,
+    recipient_role: str = "patient"
+) -> NotificationRecord:
+    """Generates an in-app notification trigger for new published content (N7)."""
+    record = NotificationRecord(
+        alert_id=None,
+        recipient_type=f"{content_type}_announcement",
+        recipient_label=f"All {recipient_role}s",
+        channel="in_app",
+        status="sent",
+        content_preview=f"New {content_type.capitalize()} Published: {title}",
+        link_url=link_url
+    )
+    db.add(record)
+    await db.commit()
+    await db.refresh(record)
+    return record
+
+
 def attach_sla(alert, sla_minutes: int = 15):
     now = datetime.utcnow()
     alert.sla_minutes = sla_minutes

@@ -5,6 +5,7 @@ from sqlalchemy.future import select
 
 from app.core.database import get_db
 from app.api.deps import get_current_user, get_current_admin, get_optional_current_user
+from app.services.notification_service import dispatch_content_notification
 from app.models.user import User
 from app.models.resource import Resource, UserResourceProgress
 from app.schemas.resource import (
@@ -24,6 +25,8 @@ async def create_resource(
     db.add(resource)
     await db.commit()
     await db.refresh(resource)
+    if resource.is_published:
+        await dispatch_content_notification(db, title=resource.title, content_type="resource", link_url="/patient/library")
     return resource
 
 @router.get("", response_model=List[ResourceResponse])
@@ -164,12 +167,15 @@ async def update_resource(
     if not resource:
         raise HTTPException(status_code=404, detail="Resource not found")
 
+    was_published = resource.is_published
     update_data = resource_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(resource, field, value)
 
     await db.commit()
     await db.refresh(resource)
+    if resource.is_published and not was_published:
+        await dispatch_content_notification(db, title=resource.title, content_type="resource", link_url="/patient/library")
     return resource
 
 @router.delete("/{resource_id}", status_code=status.HTTP_204_NO_CONTENT)
