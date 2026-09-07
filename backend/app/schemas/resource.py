@@ -31,3 +31,21 @@ class ResourceResponse(ResourceBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class ResourceProgressUpdate(BaseModel):
+    saved_for_later: Optional[bool] = None
+    progress_percent: Optional[int] = None
+    is_completed: Optional[bool] = None
+
+class ResourceProgressResponse(BaseModel):
+    id: str
+    resource_id: str
+    saved_for_later: bool
+    progress_percent: int
+    is_completed: bool
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ResourceWithProgressResponse(ResourceResponse):
+    progress: Optional[ResourceProgressResponse] = None

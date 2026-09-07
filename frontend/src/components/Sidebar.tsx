@@ -12,6 +12,7 @@ const PATIENT_NAV: NavItem[] = [
   { to: '/patient/screening', label: 'Screening', icon: '📝' },
   { to: '/patient/mood', label: 'Mood Tracker', icon: '🌿' },
   { to: '/patient/diary', label: 'Diary', icon: '📖' },
+  { to: '/patient/library', label: 'Wellness Library', icon: '📚' },
   { to: '/patient/community', label: 'Community', icon: '💬' },
   { to: '/patient/appointments', label: 'Appointments', icon: '📅' },
   { to: '/patient/vr', label: 'VR Therapy', icon: '🥽' },
