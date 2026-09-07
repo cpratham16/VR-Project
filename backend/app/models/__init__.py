@@ -17,5 +17,6 @@ from app.models.anonymized import RegionalAggregate
 from app.models.tracing import TracingSpan
 from app.models.resource import Resource, UserResourceProgress
 from app.models.newsletter import Newsletter
+from app.models.campaign import EmailCampaign, EmailRecipient
 
 
