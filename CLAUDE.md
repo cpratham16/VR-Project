@@ -1,15 +1,24 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–O, student panel polish onward)
-- Last completed iteration: N4 — Newsletter display in-app
+- Last completed iteration: N5 & N8 — Communication campaign engine & privacy safeguards
 - Status: Complete
 - What changed:
-  - **Newsletter In-App Display:** Integrated "Campus Bulletins" tab into the student Wellness Library (`/patient/library`).
-  - Students can seamlessly switch between curated wellness resources and official campus newsletters/bulletins.
-  - Interactive cards display bulletin titles, publication dates, summaries, and full modal reader view.
+  - **Communication Campaign Engine:** Created database models `EmailCampaign` and `EmailRecipient` with Alembic migration (`07fb42b9f757_add_email_campaigns_and_recipients_tables.py`).
+  - Added REST endpoints under `/api/v1`:
+    - `POST /campaigns` — Admin create draft campaign
+    - `GET /campaigns` — Admin list campaigns with recipient counts
+    - `GET /campaigns/{id}` — Admin view campaign details and recipient delivery logs
+    - `PATCH /campaigns/{id}` — Admin update campaign
+    - `POST /campaigns/{id}/send` — Admin dispatch campaign now (targets audience based on role filter)
+    - `POST /patient/unsubscribe` — Patient toggle communication opt-out preference
+    - `GET /patient/unsubscribe` — Patient query communication opt-out status
+  - **Privacy Safeguards (N8):** Strict Pydantic validator restricts `audience_type` to non-clinical criteria (`all`, `students`, `doctors`, `admins`). Clinical field targeting (PHQ-9/GAD-7 scores, mood logs) is barred. Dispatches filter out users with `unsubscribed_from_communications == True`.
+  - Frontend: `CampaignsPage.tsx` under `/admin/campaigns` with creation modal, detail drawer, recipient log, and privacy guarantee notice.
 - New/modified modules:
-  - Frontend: `src/pages/patient/WellnessLibraryPage.tsx`
+  - Backend: `app/models/campaign.py`, `app/schemas/campaign.py`, `app/api/v1/campaigns.py`, `app/models/user.py`, `tests/test_campaigns.py`
+  - Frontend: `src/pages/admin/CampaignsPage.tsx`, `App.tsx`, `components/Sidebar.tsx`
 - Verification:
-  - Backend full suite: **131 passed**.
+  - Backend full suite: **132 passed** (1 new).
   - Frontend `npm run build`: clean.
-  - GitHub Actions CI: **Both jobs (`backend-test` & `frontend-build`) PASSED**. PR #10 merged into `develop`.
-- Next: N5 — Communication campaign engine (`feature/n5-communication-campaigns`).
+  - GitHub Actions CI: **Both jobs (`backend-test` & `frontend-build`) PASSED**. PR #11 merged into `develop`.
+- Next: N6 & N7 — Email delivery integration & in-app notification triggers (`feature/n6-n7-email-notifications`).

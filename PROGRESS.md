@@ -922,3 +922,19 @@ ewsletters table and admin flow for drafting, previewing, editing, and publishin
   - Integrated into Wellness Library UI to create a unified student resource & information center.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to N5 - Communication campaign engine (eature/n5-communication-campaigns).
+
+### 2026-09-07 - Iteration N5 & N8: Communication campaign engine & privacy safeguards
+- **Status:** Complete
+- **Summary:** Built the communication campaign engine (EmailCampaign and EmailRecipient tables) and admin UI (CampaignsPage.tsx). Admin can draft, preview, send, and review delivery logs. Enforced privacy safeguards (N8): strict validator restricts audience targeting to non-clinical role criteria (ll, students, doctors, dmins). Added student opt-out preference (unsubscribed_from_communications on User), which automatically excludes opted-out users from campaign dispatches.
+- **Files touched:** ackend/app/models/campaign.py, ackend/app/schemas/campaign.py, ackend/app/api/v1/campaigns.py, ackend/app/models/user.py, ackend/app/models/__init__.py, ackend/alembic/versions/07fb42b9f757_add_email_campaigns_and_recipients_tables.py, ackend/tests/test_campaigns.py, rontend/src/pages/admin/CampaignsPage.tsx, rontend/src/App.tsx, rontend/src/components/Sidebar.tsx.
+- **Tests/checks:**
+  - pytest tests/test_campaigns.py: 1/1 pass (validation error on clinical target, opt-out exclusion, send workflow).
+  - pytest full suite: **132 passed**.
+  - npm run build: clean (built in 1.37s).
+  - GitHub Actions CI: PR #11 merged into develop after both ackend-test and rontend-build jobs passed.
+- **Acceptance criteria:** Pass - Admin can create, target, and send campaigns with accurate recipient history logs; clinical targeting is prohibited; student opt-out is respected.
+- **Rules compliance:** Pass. Branch eature/n5-communication-campaigns created, PR raised via gh, CI passed, merged into develop.
+- **Decisions & rationale:**
+  - Standardized udience_type validator to reject any clinical field keywords at schema validation time.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to N6 & N7 - Email delivery integration & in-app notification triggers (eature/n6-n7-email-notifications).
