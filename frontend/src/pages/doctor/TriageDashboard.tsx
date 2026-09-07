@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiClient } from '../../api/client';
 import { useNavigate } from 'react-router-dom';
@@ -38,6 +38,7 @@ export default function DoctorTriageDashboard() {
   const [alerts, setAlerts] = useState<RiskAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [alertsCollapsed, setAlertsCollapsed] = useState(false);
 
   // Filter & Search states
   const [riskFilter, setRiskFilter] = useState<string>('all');
@@ -53,8 +54,8 @@ export default function DoctorTriageDashboard() {
     setLoading(true);
     setError('');
     try {
-      const filterParam = riskFilter !== 'all' ? `&severity_filter=${riskFilter}` : '';
-      const res = await apiClient.get(`/doctor/triage?sort_by=${sortBy}${filterParam}`);
+      const filterParam = riskFilter !== 'all' ? '&severity_filter=' + riskFilter : '';
+      const res = await apiClient.get('/doctor/triage?sort_by=' + sortBy + filterParam);
       setPatients(res.data);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load triage patient list');
@@ -74,7 +75,7 @@ export default function DoctorTriageDashboard() {
 
   const handleAcknowledgeAlert = async (alertId: string) => {
     try {
-      await apiClient.post(`/doctor/alerts/${alertId}/acknowledge`, { resolution_notes: 'Reviewed by doctor' });
+      await apiClient.post('/doctor/alerts/' + alertId + '/acknowledge', { resolution_notes: 'Reviewed by doctor' });
       setAlerts((prev) => prev.filter((a) => a.id !== alertId));
     } catch {
       alert('Failed to acknowledge alert');
@@ -95,9 +96,9 @@ export default function DoctorTriageDashboard() {
   };
 
   const getMoodEmoji = (score?: number) => {
-    if (!score) return '—';
-    const emojis = ['😞', '😟', '😐', '🙂', '😊'];
-    return `${score}/5 ${emojis[score - 1] || ''}`;
+    if (!score) return '-';
+    const emojis = ['Very Sad', 'Sad', 'Neutral', 'Happy', 'Very Happy'];
+    return score + '/5 ' + (emojis[score - 1] || '');
   };
 
   const filteredPatients = patients.filter((p) => {
@@ -116,40 +117,50 @@ export default function DoctorTriageDashboard() {
       {/* Pending Emergency Alerts Banner */}
       {alerts.length > 0 && (
         <div className="bg-red-600 border-2 border-red-700 p-4 rounded-md shadow-lg text-white space-y-3">
-          <div className="flex items-center gap-2 font-bold text-lg">
-            <span className="text-2xl animate-bounce">🚨</span>
-            <span>CRITICAL RISK ALERTS ({alerts.length} Pending)</span>
+          <div className="flex items-center justify-between font-bold text-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl animate-bounce">[ALERT]</span>
+              <span>CRITICAL RISK ALERTS ({alerts.length} Pending)</span>
+            </div>
+            <button
+              onClick={() => setAlertsCollapsed(!alertsCollapsed)}
+              className="bg-white/20 hover:bg-white/30 text-xs font-semibold px-3 py-1.5 rounded transition cursor-pointer"
+            >
+              {alertsCollapsed ? 'Expand Alerts' : 'Collapse Alerts'}
+            </button>
           </div>
-          <div className="space-y-2">
-            {alerts.map((alert) => (
-              <div key={alert.id} className="bg-red-700 p-3 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                <div>
-                  <span className="font-semibold text-red-100">{alert.patient_pseudonym}:</span>{' '}
-                  <span className="text-sm text-white">{alert.details}</span>
-                  <span className="text-xs text-red-200 ml-2">({new Date(alert.created_at).toLocaleTimeString()})</span>
-                  {!!alert.notification_count && (
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      <span className="px-2 py-0.5 rounded-full bg-white/15 text-[10px] font-bold text-white">
-                        🔔 {alert.notification_count} crisis notification{alert.notification_count === 1 ? '' : 's'} dispatched
-                      </span>
-                      {(alert.notification_recipients ?? []).slice(0, 4).map((r, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded-full bg-black/20 text-[10px] text-red-100 truncate max-w-[220px]">
-                          {r}
+          {!alertsCollapsed && (
+            <div className="space-y-2">
+              {alerts.map((alert) => (
+                <div key={alert.id} className="bg-red-700 p-3 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <div>
+                    <span className="font-semibold text-red-100">{alert.patient_pseudonym}:</span>{' '}
+                    <span className="text-sm text-white">{alert.details}</span>
+                    <span className="text-xs text-red-200 ml-2">({new Date(alert.created_at).toLocaleTimeString()})</span>
+                    {alert.notification_count && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className="px-2 py-0.5 rounded-full bg-white/15 text-[10px] font-bold text-white">
+                          [BELL] {alert.notification_count} crisis notification{alert.notification_count === 1 ? '' : 's'} dispatched
                         </span>
-                      ))}
-                    </div>
-                  )}
+                        {(alert.notification_recipients ?? []).slice(0, 4).map((r, i) => (
+                          <span key={i} className="px-2 py-0.5 rounded-full bg-black/20 text-[10px] text-red-100 truncate max-w-[220px]">
+                            {r}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleAcknowledgeAlert(alert.id)}
+                    aria-label={'Acknowledge alert for ' + alert.patient_pseudonym}
+                    className="bg-white text-red-700 hover:bg-red-50 text-xs font-bold px-3 py-1.5 rounded shadow cursor-pointer"
+                  >
+                    Acknowledge Alert
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleAcknowledgeAlert(alert.id)}
-                  aria-label={`Acknowledge alert for ${alert.patient_pseudonym}`}
-                  className="bg-white text-red-700 hover:bg-red-50 text-xs font-bold px-3 py-1.5 rounded shadow cursor-pointer"
-                >
-                  Acknowledge Alert
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -160,7 +171,7 @@ export default function DoctorTriageDashboard() {
             <h2 className="text-2xl font-bold text-gray-800">Clinical Triage Dashboard</h2>
             {user?.is_verified ? (
               <span className="px-2.5 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-800 rounded-full border border-emerald-300">
-                ✓ Verified Clinical Staff
+                Verified Clinical Staff
               </span>
             ) : (
               <span className="px-2.5 py-0.5 text-xs font-semibold bg-amber-100 text-amber-800 rounded-full border border-amber-300">
@@ -215,11 +226,11 @@ export default function DoctorTriageDashboard() {
             <button
               key={f}
               onClick={() => setRiskFilter(f)}
-              className={`px-3 py-1 text-xs font-medium rounded-full border transition capitalize ${
+              className={'px-3 py-1 text-xs font-medium rounded-full border transition capitalize ' + (
                 riskFilter === f
                   ? 'bg-accent text-white border-teal-600 shadow-sm'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
+              )}
             >
               {f}
             </button>
@@ -277,9 +288,9 @@ export default function DoctorTriageDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-block px-3 py-1 text-xs font-semibold rounded-full border ${getRiskBadge(
+                        className={'inline-block px-3 py-1 text-xs font-semibold rounded-full border ' + getRiskBadge(
                           patient.risk_level
-                        )}`}
+                        )}
                       >
                         {patient.risk_level}
                       </span>
@@ -291,7 +302,7 @@ export default function DoctorTriageDashboard() {
                           <span className="text-xs text-gray-500 ml-1">({patient.latest_phq9_severity})</span>
                         </div>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-gray-400">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -301,7 +312,7 @@ export default function DoctorTriageDashboard() {
                           <span className="text-xs text-gray-500 ml-1">({patient.latest_gad7_severity})</span>
                         </div>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-gray-400">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4">{getMoodEmoji(patient.latest_mood_score)}</td>
@@ -310,7 +321,7 @@ export default function DoctorTriageDashboard() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => navigate(`/doctor/patient/${patient.user_id}`)}
+                        onClick={() => navigate('/doctor/patient/' + patient.user_id)}
                         className="px-3 py-1.5 bg-muted text-accent hover:bg-teal-100 rounded text-xs font-medium transition border border-[#e8e4df]"
                       >
                         View Patient Context
