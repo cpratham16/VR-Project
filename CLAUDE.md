@@ -1,15 +1,20 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–O, student panel polish onward)
-- Last completed iteration: M1 — Doctor panel SOS alert display fix & CI pipeline hardening
+- Last completed iteration: N1 — Resource data model + upload/management
 - Status: Complete
 - What changed:
-  - **Doctor panel SOS alert display fix:** Added a `showAlertsCollapsed` toggle state to `TriageDashboard.tsx`. Emergency risk alerts are now collapsible ("Collapse Alerts" / "Expand Alerts") so they remain visible/noticeable without blocking the doctor's view of the triage table. Fixed pre-existing syntax errors in `TriageDashboard.tsx` (missing filter closing paren and stray token).
-  - **CI Pipeline Hardening:** Updated `.github/workflows/ci.yml` with `QDRANT_URL: ":memory:"` and `GROQ_API_KEY: "dummy-groq-key-for-tests"`, and enabled PR triggers on `develop` branch.
+  - **Resource data model + management API:** Created `resources` database table with Alembic migration (`0434d2bb2528_add_resources_table.py`).
+  - Added Pydantic schemas in `app/schemas/resource.py` and FastAPI router in `app/api/v1/resources.py`:
+    - `POST /api/v1/resources` — Admin create resource draft/published
+    - `GET /api/v1/resources` — List resources (public/patient sees published only; admin sees all/filtered)
+    - `GET /api/v1/resources/{id}` — Get resource details (404 if draft for non-admin)
+    - `PATCH /api/v1/resources/{id}` — Admin update resource metadata/status
+    - `DELETE /api/v1/resources/{id}` — Admin delete resource
+  - Added unit test suite in `tests/test_resources.py`.
 - New/modified modules:
-  - Frontend: `src/pages/doctor/TriageDashboard.tsx`
-  - CI: `.github/workflows/ci.yml`
+  - Backend: `app/models/resource.py`, `app/schemas/resource.py`, `app/api/v1/resources.py`, `app/api/deps.py`, `tests/test_resources.py`
 - Verification:
-  - Backend full suite: **128 passed**.
-  - Frontend `npm run build`: clean (6.0s).
-  - GitHub Actions CI: **Both jobs (`backend-test` & `frontend-build`) PASSED**. PR #6 merged into `develop`.
-- Next: N1 — Resource Library (Admin & Patient) (`feature/n1-resource-library`).
+  - Backend full suite: **129 passed** (1 new).
+  - Frontend `npm run build`: clean.
+  - GitHub Actions CI: **Both jobs (`backend-test` & `frontend-build`) PASSED**. PR #7 merged into `develop`.
+- Next: N2 — Wellness Library (student-facing) (`feature/n2-wellness-library`).

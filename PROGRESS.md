@@ -855,3 +855,20 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - CI environment needed explicit in-memory Qdrant URL to prevent remote connection failures during unit tests.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to Phase N (Admin Resource / Communication Suite) starting with N1.
+
+### 2026-09-07 - Iteration N1: Resource data model + upload/management
+- **Status:** Complete
+- **Summary:** Built the esources database table (Resource model) with fields: title, description, resource_type (pdf, book, article, video), category, file_url, thumbnail_url, author, and is_published status. Added full CRUD REST endpoints under /api/v1/resources: Admin upload/manage (draft, publish, update, delete) and public/patient read access (published only). Tested with full test lifecycle in 	est_resources.py.
+- **Files touched:** ackend/app/models/resource.py, ackend/app/schemas/resource.py, ackend/app/api/v1/resources.py, ackend/app/api/deps.py, ackend/app/api/v1/router.py, ackend/app/models/__init__.py, ackend/alembic/versions/0434d2bb2528_add_resources_table.py, ackend/tests/test_resources.py.
+- **Tests/checks:**
+  - pytest tests/test_resources.py: 1/1 pass.
+  - pytest full suite: **129 passed**.
+  - npm run build: clean.
+  - GitHub Actions CI: PR #7 merged into develop after both ackend-test and rontend-build jobs passed.
+- **Acceptance criteria:** Pass - Admin can upload a resource, save it as a draft, publish it, edit it later, and delete it; non-admins cannot access unpublished drafts.
+- **Rules compliance:** Pass. Branch eature/n1-resource-management created, PR raised via gh, CI passed, merged into develop.
+- **Decisions & rationale:**
+  - Added get_optional_current_user in deps.py to allow optional authentication for public/patient resource listing.
+  - Datetimes use UTC naive format matching Postgres schema conventions.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to N2 - Wellness Library (student-facing) (eature/n2-wellness-library).
