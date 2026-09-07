@@ -6,6 +6,8 @@ from sqlalchemy.future import select
 
 from app.core.database import get_db
 from app.api.deps import get_current_user, get_current_admin
+from app.services.email_service import deliver_campaign_email
+from app.services.notification_service import dispatch_content_notification
 from app.models.user import User
 from app.models.campaign import EmailCampaign, EmailRecipient
 from app.schemas.campaign import (
@@ -121,18 +123,29 @@ async def send_campaign(
     now = datetime.utcnow()
     recipients = []
     for u in target_users:
+        delivery_status, err = deliver_campaign_email(u.email, campaign.subject, campaign.body_html)
         rec = EmailRecipient(
             campaign_id=campaign.id,
             user_id=u.id,
             email=u.email,
-            status="sent",
-            sent_at=now
+            status=delivery_status,
+            sent_at=now if delivery_status != "failed" else None,
+            error_message=err
         )
         db.add(rec)
         recipients.append(rec)
 
     campaign.status = "sent"
     campaign.sent_at = now
+
+    if "in_app" in campaign.delivery_channels.lower():
+        await dispatch_content_notification(
+            db,
+            title=campaign.title,
+            content_type="announcement",
+            link_url="/patient/library",
+            recipient_role=campaign.audience_type if campaign.audience_type != "all" else "patient"
+        )
 
     await db.commit()
     await db.refresh(campaign)

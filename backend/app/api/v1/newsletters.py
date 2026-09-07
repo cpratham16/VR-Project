@@ -6,6 +6,7 @@ from sqlalchemy.future import select
 
 from app.core.database import get_db
 from app.api.deps import get_current_user, get_current_admin, get_optional_current_user
+from app.services.notification_service import dispatch_content_notification
 from app.models.user import User
 from app.models.newsletter import Newsletter
 from app.schemas.newsletter import NewsletterCreate, NewsletterUpdate, NewsletterResponse
@@ -25,6 +26,8 @@ async def create_newsletter(
     db.add(newsletter)
     await db.commit()
     await db.refresh(newsletter)
+    if newsletter.is_published:
+        await dispatch_content_notification(db, title=newsletter.title, content_type="newsletter", link_url="/patient/library")
     return newsletter
 
 @router.get("", response_model=List[NewsletterResponse])
@@ -72,6 +75,7 @@ async def update_newsletter(
     if not newsletter:
         raise HTTPException(status_code=404, detail="Newsletter not found")
 
+    was_published = newsletter.is_published
     update_data = newsletter_in.model_dump(exclude_unset=True)
     if update_data.get("is_published") and not newsletter.is_published and not newsletter.published_at:
         update_data["published_at"] = datetime.utcnow()
@@ -81,6 +85,8 @@ async def update_newsletter(
 
     await db.commit()
     await db.refresh(newsletter)
+    if newsletter.is_published and not was_published:
+        await dispatch_content_notification(db, title=newsletter.title, content_type="newsletter", link_url="/patient/library")
     return newsletter
 
 @router.delete("/{newsletter_id}", status_code=status.HTTP_204_NO_CONTENT)
