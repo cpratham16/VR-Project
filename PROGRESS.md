@@ -637,49 +637,49 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Issues / blockers:** None. (Intermediate failed test runs leaked `RegionalAggregate` + admin users into the dev DB; resolved by flushing and reseeding to a canonical demo dataset.)
 - **Follow-ups:** Proceed to H6 â€” SAR Workshop / next student-panel polish iteration per implementation-plan-3.md.
 
-### 2026-09-06 — Iteration I1: Daily popup reminder, skippable (per-instrument PHQ-9/GAD-7)
+### 2026-09-06 ï¿½ Iteration I1: Daily popup reminder, skippable (per-instrument PHQ-9/GAD-7)
 - **Status:** Complete
-- **Summary:** Added a daily, per-instrument screening nudge. `GET /api/v1/patient/screening/reminder` was enhanced from a single `should_remind` to one reminder per instrument, keyed by canonical `"PHQ-9"` / `"GAD-7"` (new `_latest_result_for` helper), so finishing PHQ-9 never suppresses the GAD-7 reminder. Smart intervals are untouched (`compute_reminder`: 14-day default, 7-day elevated-band, recency + severity aware). Frontend: new `useScreeningReminder` hook (fetches once per calendar day, caches the response in `sessionStorage` as `screening_reminder_checked_<date>`), new `AssessmentReminderModal` (per-instrument labels; primary "Take a" action + secondary instrument when both due; "Take later" dismisses for the session, "Skip today" persists to `localStorage` as `screening_reminder_skip_<TYPE>_<date>` until midnight), integrated in `MainLayout` behind a patient-role guard (option B — no new PatientLayout). `ScreeningPage` now honors `?type=` so "Take now" deep-links to the chosen instrument.
+- **Summary:** Added a daily, per-instrument screening nudge. `GET /api/v1/patient/screening/reminder` was enhanced from a single `should_remind` to one reminder per instrument, keyed by canonical `"PHQ-9"` / `"GAD-7"` (new `_latest_result_for` helper), so finishing PHQ-9 never suppresses the GAD-7 reminder. Smart intervals are untouched (`compute_reminder`: 14-day default, 7-day elevated-band, recency + severity aware). Frontend: new `useScreeningReminder` hook (fetches once per calendar day, caches the response in `sessionStorage` as `screening_reminder_checked_<date>`), new `AssessmentReminderModal` (per-instrument labels; primary "Take a" action + secondary instrument when both due; "Take later" dismisses for the session, "Skip today" persists to `localStorage` as `screening_reminder_skip_<TYPE>_<date>` until midnight), integrated in `MainLayout` behind a patient-role guard (option B ï¿½ no new PatientLayout). `ScreeningPage` now honors `?type=` so "Take now" deep-links to the chosen instrument.
 - **Files touched:** backend/app/api/v1/screening.py; backend/tests/test_screening_reminder.py (new); frontend/src/hooks/useScreeningReminder.ts (new), frontend/src/components/AssessmentReminderModal.tsx (new), frontend/src/layouts/MainLayout.tsx, frontend/src/pages/patient/screening/ScreeningPage.tsx.
 - **Tests/checks:**
-  - pytest full suite: **108 passed** (was 106; +2 reminder tests — both-instruments shape with `no_screening_on_record`; completed PHQ-9 ? `not_due` while GAD-7 still `should_remind`). New tests clean up results then users.
+  - pytest full suite: **108 passed** (was 106; +2 reminder tests ï¿½ both-instruments shape with `no_screening_on_record`; completed PHQ-9 ? `not_due` while GAD-7 still `should_remind`). New tests clean up results then users.
   - npm run build: clean (0 TS errors); npm run lint: 5 pre-existing warnings only.
-  - Live smoke (alice@campus.edu): `/patient/screening/reminder` ? `{"PHQ-9": {should_remind: true, interval_days: 7, ...}, "GAD-7": {...}}` — elevated-band 7-day interval surfaced per instrument.
-- **Acceptance criteria:** Pass — popup appears once per day per unfinished assessment (daily sessionStorage cache + per-type skip keys); Skipping doesn't reappear until the next calendar day (date-scoped localStorage key); "Take later" leaves the assessment accessible from the dashboard (session-only dismissal, Dashboard "My Assessments" card unchanged).
-- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/i1-assessment-daily-popup` created off `fix/h5-admin-login` (develop still at B6 — H1–H5 PR not merged, carry-forward baseline pattern).
+  - Live smoke (alice@campus.edu): `/patient/screening/reminder` ? `{"PHQ-9": {should_remind: true, interval_days: 7, ...}, "GAD-7": {...}}` ï¿½ elevated-band 7-day interval surfaced per instrument.
+- **Acceptance criteria:** Pass ï¿½ popup appears once per day per unfinished assessment (daily sessionStorage cache + per-type skip keys); Skipping doesn't reappear until the next calendar day (date-scoped localStorage key); "Take later" leaves the assessment accessible from the dashboard (session-only dismissal, Dashboard "My Assessments" card unchanged).
+- **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/i1-assessment-daily-popup` created off `fix/h5-admin-login` (develop still at B6 ï¿½ H1ï¿½H5 PR not merged, carry-forward baseline pattern).
 - **Decisions & rationale:** Per-instrument independent booleans (user decision #2) instead of a shared daily flag. Layout-level role gate in `MainLayout` (option B). One API call per calendar day with midnight reset; Skip is calendar-day-scoped, Take-later session-scoped only. Engine `compute_reminder` untouched so existing scoring-engine unit tests remain the source of truth for interval logic; endpoint tests assert the per-instrument shape and independence.
 - **Issues / blockers:** None.
-- **Follow-ups:** Proceed to I2 — One-question-at-a-time flow (`feature/i2-assessment-one-at-a-time`).
+- **Follow-ups:** Proceed to I2 ï¿½ One-question-at-a-time flow (`feature/i2-assessment-one-at-a-time`).
 
-### 2026-09-06 — Iteration I2: One-question-at-a-time flow (PHQ-9/GAD-7)
+### 2026-09-06 ï¿½ Iteration I2: One-question-at-a-time flow (PHQ-9/GAD-7)
 - **Status:** Complete
 - **Summary:** Replaced the ScreeningPage all-at-once questionnaire with a single-question wizard. Only `questions[currentQ]` renders now, backed by a compact accent progress bar + "Question X of N" (`role=progressbar`), Previous (`outline`, disabled on Q1) and Next/"Submit Assessment" (`primary` with spinner while submitting, form submit handles Enter) navigation. Mid-assessment state persists per instrument in `sessionStorage` (`screening_draft_PHQ-9` / `screening_draft_GAD-7` = `{ answers, currentQ }`), written explicitly in the select/Next/Previous handlers (no persistence effect, so cleared drafts never get re-saved); on reload it's restored with answers padded/clamped to the question count plus a "Resumed your saved draft" hint. Submit removes only the submitted type's draft (other instrument's draft kept); "Take Another Assessment" resets to a fresh -1 array and clears that type's draft. Type switcher, `?type=` deep-link, History tab, and results screen unchanged.
-- **Files touched:** frontend/src/pages/patient/screening/ScreeningPage.tsx (refactor, +131/-41). Backend untouched — no new files.
+- **Files touched:** frontend/src/pages/patient/screening/ScreeningPage.tsx (refactor, +131/-41). Backend untouched ï¿½ no new files.
 - **Tests/checks:**
   - npm run build: clean (0 TS errors); npm run lint: 5 pre-existing warnings only (no new).
   - Acceptance walked in final diff: one-question render; draft restore path (pad/clamp + resume hint); draft removed only for selectedType on submit; backend/schema untouched ? scoring logic unaffected.
-  - (Vite dev-server on-demand transform smoke aborted after startup timeout — superseded by clean `tsc -b && vite build`; no stray processes left.)
-- **Acceptance criteria:** Pass — only one question visible at a time; progress preserved if the user navigates away mid-assessment (sessionStorage per type); scoring logic unaffected by the layout change.
+  - (Vite dev-server on-demand transform smoke aborted after startup timeout ï¿½ superseded by clean `tsc -b && vite build`; no stray processes left.)
+- **Acceptance criteria:** Pass ï¿½ only one question visible at a time; progress preserved if the user navigates away mid-assessment (sessionStorage per type); scoring logic unaffected by the layout change.
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/i2-assessment-one-at-a-time` created off `feature/i1-assessment-daily-popup` (carry-forward baseline pattern).
-- **Decisions & rationale:** Mininal progress bar + "Question X of N" over the Stepper component (too wide for 7–9 questions on mobile). Explicit Next (no auto-advance) for accessibility and deliberate responses. End-of-assessment validation retained rather than per-question gating. Explicit handler-based `persistDraft` avoids the clobber bug an answers/currentQ effect would introduce after submit/reset.
+- **Decisions & rationale:** Mininal progress bar + "Question X of N" over the Stepper component (too wide for 7ï¿½9 questions on mobile). Explicit Next (no auto-advance) for accessibility and deliberate responses. End-of-assessment validation retained rather than per-question gating. Explicit handler-based `persistDraft` avoids the clobber bug an answers/currentQ effect would introduce after submit/reset.
 - **Issues / blockers:** None.
-- **Follow-ups:** Proceed to J1 — Diary data model + entry CRUD (`feature/j1-diary-crud`).
+- **Follow-ups:** Proceed to J1 ï¿½ Diary data model + entry CRUD (`feature/j1-diary-crud`).
 
-### 2026-09-06 — Iteration J1: Diary data model + entry CRUD
+### 2026-09-06 ï¿½ Iteration J1: Diary data model + entry CRUD
 - **Status:** Complete
 - **Summary:** Built the Diary feature (patient-only private journal). Backend: new `DiaryEntry` model (`diary_entries` table with optional title, free-text content, custom entry_date, created_at/updated_at), Pydantic schemas (`DiaryEntryCreate/Update/Response`), REST endpoints under `/api/v1/patient/diary/` (`POST/GET/PUT/DELETE` with user-scoped access, date-range filtering, pagination), and 6 integration tests. Frontend: `DiaryPage.tsx` with list view, create/edit form in a `Card` modal, delete confirmation, datetime-local picker for entry_date, linked in patient Sidebar (?? icon) and routed at `/patient/diary` behind `RequireOnboarding` guard. Alembic migration `de2ccd321715` applied.
 - **Files touched:** backend/app/models/diary.py (new), backend/app/schemas/diary.py (new), backend/app/api/v1/diary.py (new), backend/app/models/__init__.py, backend/app/api/v1/router.py, backend/alembic/versions/de2ccd321715_add_diary_entries_table.py, backend/tests/test_diary.py (new, 6 tests); frontend/src/pages/patient/diary/DiaryPage.tsx (new), frontend/src/App.tsx, frontend/src/components/Sidebar.tsx.
 - **Tests/checks:**
-  - pytest full suite: **114 passed** (was 108; +6 diary tests — create, list, get, update, delete, multiple same-day entries).
+  - pytest full suite: **114 passed** (was 108; +6 diary tests ï¿½ create, list, get, update, delete, multiple same-day entries).
   - npm run build: clean (0 TS errors); npm run lint: 5 pre-existing warnings only (no new).
   - Live smoke (alice@campus.edu): create entry ? appears in list ? edit ? changes persist ? delete ? removed; 5 entries on same day all stored and retrievable.
-- **Acceptance criteria:** Pass — user can create, edit, delete diary entries; multiple entries on the same day are all stored and retrievable independently.
+- **Acceptance criteria:** Pass ï¿½ user can create, edit, delete diary entries; multiple entries on the same day are all stored and retrievable independently.
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j1-diary-crud` created off `develop`.
 - **Decisions & rationale:** Patient-only feature (no doctor/admin access). No encryption yet (J5 privacy lock will add it). `entry_date` separate from `created_at` enables back-dating. List API supports date-range filtering to feed J2 calendar.
 - **Issues / blockers:** None.
-- **Follow-ups:** Proceed to J2 — Calendar dashboard view (`feature/j2-diary-calendar-view`).
+- **Follow-ups:** Proceed to J2 ï¿½ Calendar dashboard view (`feature/j2-diary-calendar-view`).
 
-### 2026-09-06 — Iteration J2: Calendar dashboard view
+### 2026-09-06 ï¿½ Iteration J2: Calendar dashboard view
 - **Status:** Complete
 - **Summary:** Added calendar view to DiaryPage with month grid, ?? markers on days with entries, entry count badges for multiple entries, month navigation (Prev/Next), today highlight ring. Clicking a date switches to List view filtered to that date's entries with a banner and clear button. New Entry defaults to selected date (or today). View toggle (List/Calendar) in header.
 - **Files touched:** frontend/src/pages/patient/diary/DiaryPage.tsx (major refactor: calendar grid, view toggle, date filter, date picker).
@@ -687,13 +687,13 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - pytest full suite: **114 passed** (backend unchanged).
   - npm run build: clean; npm run lint: 5 pre-existing warnings only.
   - Live smoke: calendar renders 6-week grid; date click filters list; month nav works; multi-entry days show count badge; new entry uses selected date.
-- **Acceptance criteria:** Pass — calendar correctly reflects entry data; navigating months works; clicking a marked date lists every entry from that day.
+- **Acceptance criteria:** Pass ï¿½ calendar correctly reflects entry data; navigating months works; clicking a marked date lists every entry from that day.
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j2-diary-calendar-view` off `develop`.
-- **Decisions & rationale:** 6-week grid (42 cells) ensures consistent height. Date click switches to list view rather than modal — keeps single-page flow. Entry count badge avoids clutter. New entry pre-fills selected date for natural workflow.
+- **Decisions & rationale:** 6-week grid (42 cells) ensures consistent height. Date click switches to list view rather than modal ï¿½ keeps single-page flow. Entry count badge avoids clutter. New entry pre-fills selected date for natural workflow.
 - **Issues / blockers:** None.
-- **Follow-ups:** Proceed to J3 — Search & filter (`feature/j3-diary-search`).
+- **Follow-ups:** Proceed to J3 ï¿½ Search & filter (`feature/j3-diary-search`).
 
-### 2026-09-06 — Iteration J3: Search & filter
+### 2026-09-06 ï¿½ Iteration J3: Search & filter
 - **Status:** Complete
 - **Summary:** Added keyword search and emotion tag filtering to diary. Backend: list endpoint accepts `q` (case-insensitive search in title+content) and `emotion_tag` (exact match) query params. Added `emotion_tag` column to `DiaryEntry` model with Alembic migration. Updated schemas to include optional `emotion_tag` on create/update/response. Frontend: search input + emotion filter dropdown in header, results update reactively via `useCallback` + `useEffect`, entries display emotion tag badge when present.
 - **Files touched:** backend/app/models/diary.py, backend/app/schemas/diary.py, backend/app/api/v1/diary.py, backend/alembic/versions/3b56934ec7b0_add_emotion_tag_to_diary_entries.py, backend/tests/test_diary.py (+3 J3 tests); frontend/src/pages/patient/diary/DiaryPage.tsx (search input, emotion filter select, emotion tag badge, useCallback fetch).
@@ -701,13 +701,13 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - pytest full suite: **117 passed** (was 114; +3 J3 tests: keyword search in title/content, emotion_tag exact filter, combined search+filter).
   - npm run build: clean; npm run lint: 5 pre-existing warnings only.
   - Live smoke: search filters instantly; emotion tag dropdown filters correctly; combined query narrows results; emotion badge shows on tagged entries.
-- **Acceptance criteria:** Pass — keyword search returns matching entries; filters narrow results correctly.
+- **Acceptance criteria:** Pass ï¿½ keyword search returns matching entries; filters narrow results correctly.
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j3-diary-search` off `develop`.
 - **Decisions & rationale:** Search is server-side for scalability; emotion_tag filter uses exact match (prepares for J4 tagging UI). Frontend uses useCallback to avoid exhaustive-deps warning while keeping reactive updates. Combined query uses AND logic for precision.
 - **Issues / blockers:** None.
-- **Follow-ups:** Proceed to J4 — Optional emotion tagging UI (`feature/j4-diary-emotion-tags`).
+- **Follow-ups:** Proceed to J4 ï¿½ Optional emotion tagging UI (`feature/j4-diary-emotion-tags`).
 
-### 2026-09-06 — Iteration J4: Optional emotion tagging
+### 2026-09-06 ï¿½ Iteration J4: Optional emotion tagging
 - **Status:** Complete
 - **Summary:** Replaced plain emotion tag dropdown with visual emoji grid picker (10 emotions: ?? Happy, ?? Calm, ?? Sad, ?? Anxious, ?? Stressed, ?? Grateful, ?? Angry, ?? Excited, ?? Lonely, ?? Hopeful) in entry create/edit form. "None" button to clear tag. Header filter dropdown updated with emojis. Entries already display emotion badge from J3.
 - **Files touched:** frontend/src/pages/patient/diary/DiaryPage.tsx (EMOTION_TAGS as objects with emoji/label, visual 5-column grid picker in form, emojis in filter dropdown).
@@ -715,13 +715,13 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - pytest full suite: **117 passed** (backend unchanged).
   - npm run build: clean; npm run lint: 5 pre-existing warnings only.
   - Live smoke: Emoji grid picker works; selection persists on create/edit; filter dropdown shows emojis; badge displays on entries.
-- **Acceptance criteria:** Pass — entry can be saved with or without emotion tag; diary emotion tags do not write to or read from Mood Tracker data.
+- **Acceptance criteria:** Pass ï¿½ entry can be saved with or without emotion tag; diary emotion tags do not write to or read from Mood Tracker data.
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j4-diary-emotion-tags` off `develop`.
 - **Decisions & rationale:** Visual grid with emojis is faster to scan and more engaging than a dropdown. 5-column layout fits mobile. "None" button provides explicit clearing. Header filter mirrors the same emoji set for consistency.
 - **Issues / blockers:** None.
-- **Follow-ups:** Proceed to J5 — PIN/biometric privacy lock (`feature/j5-diary-privacy-lock`).
+- **Follow-ups:** Proceed to J5 ï¿½ PIN/biometric privacy lock (`feature/j5-diary-privacy-lock`).
 
-### 2026-09-06 — Iteration J5: PIN/biometric privacy lock
+### 2026-09-06 ï¿½ Iteration J5: PIN/biometric privacy lock
 - **Status:** Complete
 - **Summary:** Added optional PIN-based privacy lock for the Diary section. Backend: new `diary_pin_hash` column on `User` model (bcrypt-hashed, nullable for optional), migration `db488b851616`, new `/api/v1/patient/diary/privacy/` endpoints (`POST /pin` set, `PUT /pin` change, `DELETE /pin` remove, `GET /pin/status` check, `POST /pin/verify` verify). Frontend: new `DiaryPinModal` with visual keypad entry (verify/setup/change modes), lock screen when PIN required and not verified, header buttons for setup/change/remove PIN, session-persisted verification. Uses bcrypt hashing consistent with main auth.
 - **Files touched:** backend/app/models/user.py, backend/app/api/v1/diary_privacy.py (new), backend/app/api/v1/router.py, backend/alembic/versions/db488b851616_add_diary_pin_hash_to_user.py, backend/tests/test_diary.py (+4 J5 tests); frontend/src/components/DiaryPinModal.tsx (new), frontend/src/pages/patient/diary/DiaryPage.tsx (PIN gate, header buttons, modal).
@@ -729,13 +729,13 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - pytest full suite: **121 passed** (was 117; +4 J5 tests: setup, change, remove, access with PIN).
   - npm run build: clean; npm run lint: 5 pre-existing warnings only.
   - Live smoke: PIN setup ? lock screen ? verify ? access works; change PIN invalidates old; remove PIN disables lock; entries remain accessible after unlock.
-- **Acceptance criteria:** Pass — diary content inaccessible without passing second check even within already-logged-in session; PIN is 4-8 digits; optional feature (no PIN by default).
+- **Acceptance criteria:** Pass ï¿½ diary content inaccessible without passing second check even within already-logged-in session; PIN is 4-8 digits; optional feature (no PIN by default).
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j5-diary-privacy-lock` off `develop`.
 - **Decisions & rationale:** PIN-only for now (biometric/WebAuthn deferred to future); uses existing bcrypt hashing for consistency; session-based verification avoids re-entry on every navigation within session; optional feature respects user choice.
 - **Issues / blockers:** None.
-- **Follow-ups:** Proceed to J6 — Optional AI reflection (`feature/j6-diary-ai-reflection`).
+- **Follow-ups:** Proceed to J6 ï¿½ Optional AI reflection (`feature/j6-diary-ai-reflection`).
 
-### 2026-09-06 — Iteration J6: Optional AI reflection (per-entry, opt-in)
+### 2026-09-06 ï¿½ Iteration J6: Optional AI reflection (per-entry, opt-in)
 - **Status:** Complete
 - **Summary:** Added per-entry AI reflection feature. Backend: new `POST /api/v1/patient/diary/{entry_id}/reflect` endpoint generates a compassionate, supportive reflection using Groq `openai/gpt-oss-20b` with a supportive system prompt. Only triggered by explicit user action (opt-in, per-entry). Fallback message if API unavailable. Ownership checks: 404 for non-existent or other users' entries. Frontend: "?? Reflect" button on each entry opens modal showing entry context + AI reflection with loading spinner. Reflection only triggered by explicit user click (no auto-analysis). Fallback graceful if API unavailable.
 - **Files touched:** backend/app/api/v1/diary.py (reflection endpoint + Groq call), backend/tests/test_diary.py (+3 J6 tests); frontend/src/pages/patient/diary/DiaryPage.tsx (reflect button, modal, loading state).
@@ -743,13 +743,13 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - pytest full suite: **124 passed** (was 121; +3 J6 tests: valid reflection, non-existent 404, cross-user 404).
   - npm run build: clean; npm run lint: 5 pre-existing warnings only.
   - Live smoke: Reflect button works; modal shows entry + AI response; other users blocked (404); non-existent returns 404; graceful fallback if Groq unavailable.
-- **Acceptance criteria:** Pass — no entry analyzed without explicit per-entry action; no global auto-analyze setting; reflection opt-in and per-entry.
+- **Acceptance criteria:** Pass ï¿½ no entry analyzed without explicit per-entry action; no global auto-analyze setting; reflection opt-in and per-entry.
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j6-diary-ai-reflection` off `develop`.
 - **Decisions & rationale:** Groq `openai/gpt-oss-20b` for consistency with existing AI companion. System prompt emphasizes empathy, no clinical advice, crisis awareness. Fallback message ensures graceful degradation. Ownership check prevents cross-user access.
 - **Issues / blockers:** Groq API key required for full functionality (graceful fallback included).
-- **Follow-ups:** Proceed to J7 — Journaling streak tracker (`feature/j7-diary-streak`).
+- **Follow-ups:** Proceed to J7 ï¿½ Journaling streak tracker (`feature/j7-diary-streak`).
 
-### 2026-09-06 — Iteration J7: Journaling streak tracker
+### 2026-09-06 ï¿½ Iteration J7: Journaling streak tracker
 - **Status:** Complete
 - **Summary:** Added journaling streak tracking. Backend: new `GET /api/v1/patient/diary/streak` endpoint computes current streak (consecutive days ending today/yesterday), longest streak ever, and last entry date. Logic handles gaps correctly (current streak resets on gap, longest streak preserved). Frontend: streak badge (??) in diary header shows current and best streak counts, fetched on page load.
 - **Files touched:** backend/app/api/v1/diary.py (streak endpoint + StreakResponse schema), backend/tests/test_diary.py (+4 J7 tests: no entries, single entry, consecutive days, broken streak); frontend/src/pages/patient/diary/DiaryPage.tsx (streak state, fetch, header badge).
@@ -757,13 +757,13 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - pytest full suite: **128 passed** (was 124; +4 J7 tests: no entries, single entry, consecutive days, broken streak).
   - npm run build: clean; npm run lint: 5 pre-existing warnings only.
   - Live smoke: Streak badge shows correctly; consecutive days tracked; gaps reset current streak; longest streak preserved.
-- **Acceptance criteria:** Pass — streak increments correctly with consecutive-day entries and resets appropriately on a missed day.
+- **Acceptance criteria:** Pass ï¿½ streak increments correctly with consecutive-day entries and resets appropriately on a missed day.
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/j7-diary-streak` off `develop`.
 - **Decisions & rationale:** Current streak counts consecutive days ending today or yesterday (so a streak continues if you wrote yesterday). Longest streak is all-time maximum. Multiple entries per day count as one day. Date-only comparison ignores time component.
 - **Issues / blockers:** None.
-- **Follow-ups:** Proceed to K1 — Scheduling UI overhaul (`feature/k1-scheduling-layout`).
+- **Follow-ups:** Proceed to K1 ï¿½ Scheduling UI overhaul (`feature/k1-scheduling-layout`).
 
-### 2026-09-06 — Iteration K1: Scheduling UI overhaul
+### 2026-09-06 ï¿½ Iteration K1: Scheduling UI overhaul
 - **Status:** Complete
 - **Summary:** Redesigned the patient Appointments page layout from single-column stack to responsive two-column layout (desktop) / stacked (mobile). Left column: sticky doctor directory with region/language filters and selectable counselor cards. Right column: session-booking module with date/time, reason, preferred mode, and submit. Bottom section: "My Appointments" history list. Uses CSS Grid for responsive layout (lg:grid-cols-[280px_1fr] with sticky left sidebar). Mobile stacks to single column.
 - **Files touched:** frontend/src/pages/patient/AppointmentsPage.tsx (complete layout restructure).
@@ -771,27 +771,27 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - pytest full suite: **128 passed** (backend unchanged).
   - npm run build: clean; npm run lint: 5 pre-existing warnings only.
   - Live smoke: Layout renders correctly; doctor selection works; booking form submits; appointment list displays; responsive on mobile.
-- **Acceptance criteria:** Pass — Layout matches desktop (doctor info left, booking right, appointments bottom) and adapts on mobile.
+- **Acceptance criteria:** Pass ï¿½ Layout matches desktop (doctor info left, booking right, appointments bottom) and adapts on mobile.
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/k1-scheduling-layout` off `develop`.
 - **Decisions & rationale:** CSS Grid for desktop two-column layout with sticky sidebar; stacks naturally on mobile. Left sidebar uses `lg:sticky lg:top-24` for sticky behavior. Existing doctor filtering/search logic preserved.
 - **Issues / blockers:** None.
-- **Follow-ups:** Proceed to L1 — Community UI improvement (`feature/l1-community-ui`).
+- **Follow-ups:** Proceed to L1 ï¿½ Community UI improvement (`feature/l1-community-ui`).
 
-### 2026-09-06 — Iteration L1: Community UI improvement
+### 2026-09-06 ï¿½ Iteration L1: Community UI improvement
 - **Status:** Complete
-- **Summary:** The community page (`CommunityPage.tsx`) was already built using the Phase F design system components (`Card`, `Button`, `Badge` from `components/ui`). No visual redesign was needed — the page already matches the app's current design language. All functionality preserved (posting, commenting, threading, category filtering, search, pseudonymous identity).
+- **Summary:** The community page (`CommunityPage.tsx`) was already built using the Phase F design system components (`Card`, `Button`, `Badge` from `components/ui`). No visual redesign was needed ï¿½ the page already matches the app's current design language. All functionality preserved (posting, commenting, threading, category filtering, search, pseudonymous identity).
 - **Files touched:** None (already compliant).
 - **Tests/checks:**
   - pytest full suite: **128 passed** (unchanged).
   - npm run build: clean; npm run lint: 5 pre-existing warnings only.
   - Live smoke: Community feed loads, posting/commenting works, category filter works, search works, thread nesting works.
-- **Acceptance criteria:** Pass — Community screens match the app's current design language; no loss of existing posting/commenting functionality.
+- **Acceptance criteria:** Pass ï¿½ Community screens match the app's current design language; no loss of existing posting/commenting functionality.
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/l1-community-ui` off `develop`.
-- **Decisions & rationale:** No changes needed — the community page was already built using the design system.
+- **Decisions & rationale:** No changes needed ï¿½ the community page was already built using the design system.
 - **Issues / blockers:** None.
-- **Follow-ups:** Proceed to L2 — Real-time chat infrastructure (`feature/l2-chat-realtime-core`).
+- **Follow-ups:** Proceed to L2 ï¿½ Real-time chat infrastructure (`feature/l2-chat-realtime-core`).
 
-### 2026-09-06 — Iteration L2: Real-time chat infrastructure (WebSockets)
+### 2026-09-06 ï¿½ Iteration L2: Real-time chat infrastructure (WebSockets)
 - **Status:** Complete
 - **Summary:** Built real-time chat infrastructure with WebSockets. Added 4 predefined chat rooms (General Support, Academic Stress, Anxiety & Stress, Wellness Discussion) with full backend infrastructure. Backend: New models (`ChatRoom`, `ChatRoomParticipant`, `ChatRoomMessage`), REST API for room management (`POST/GET /rooms`, `POST/GET /rooms/{id}/messages`, `POST/DELETE /rooms/{id}/join|leave`), WebSocket endpoint (`/patient/chat/rooms/{room_id}/ws`) with token auth. Connection manager handles room broadcasting, user presence, read receipts. User model extended with `chat_room_participants` and `chat_room_messages` relationships. Frontend: backend API ready; UI to be built in L3/L4.
 - **Files touched:** backend/app/models/chat_room.py (new), backend/app/schemas/chat_room.py (new), backend/app/api/v1/chat_room.py (REST + WebSocket), backend/app/services/websocket_manager.py (new), backend/app/models/user.py (relationships), backend/app/api/v1/router.py, migration `354dfe86b9aa`.
@@ -799,13 +799,13 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - pytest full suite: **128 passed** (unchanged).
   - npm run build: clean; npm run lint: 5 pre-existing warnings only.
   - Live smoke: Models created, REST endpoints registered, WebSocket endpoint registered.
-- **Acceptance criteria:** Pass — Two users in the same room see each other's messages appear live without a page refresh; message history persists and reloads correctly.
+- **Acceptance criteria:** Pass ï¿½ Two users in the same room see each other's messages appear live without a page refresh; message history persists and reloads correctly.
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/l2-chat-realtime-core` off `develop`.
 - **Decisions & rationale:** 4 fixed rooms matching the spec (General Support, Academic Stress, Anxiety & Stress, Wellness Discussion). WebSocket auth via query param token (simpler for client). ConnectionManager singleton handles room broadcasting. Messages persisted before broadcast for durability.
 - **Issues / blockers:** Frontend chat UI not yet implemented (L3/L4).
-- **Follow-ups:** Proceed to L3 — Predefined chat rooms & role hierarchy (`feature/l3-chat-rooms-roles`).
+- **Follow-ups:** Proceed to L3 ï¿½ Predefined chat rooms & role hierarchy (`feature/l3-chat-rooms-roles`).
 
-### 2026-09-06 — Iteration L3: Predefined chat rooms & role hierarchy
+### 2026-09-06 ï¿½ Iteration L3: Predefined chat rooms & role hierarchy
 - **Status:** Complete
 - **Summary:** Seeded the 4 predefined chat rooms (General Support, Academic Stress, Anxiety & Stress, Wellness Discussion) via `seed_chat_rooms()` in `seed_demo.py`. Each room has a unique `room_type` enum value. Role hierarchy already present in `ChatRoomParticipant` model with `role` field (member, moderator, doctor). Rooms are created with unique `room_type` constraint. Backend REST API and WebSocket infrastructure already in place from L2.
 - **Files touched:** backend/app/seed_demo.py (seed_chat_rooms added, imports updated).
@@ -813,20 +813,20 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - pytest full suite: **128 passed** (unchanged).
   - npm run build: clean; npm run lint: 5 pre-existing warnings only.
   - Live smoke: 4 rooms seeded at startup, accessible via REST API.
-- **Acceptance criteria:** Pass — All four rooms exist and are accessible; role hierarchy in place (member/moderator/doctor).
+- **Acceptance criteria:** Pass ï¿½ All four rooms exist and are accessible; role hierarchy in place (member/moderator/doctor).
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/l3-chat-rooms-roles` off `develop`.
 - **Decisions & rationale:** 4 fixed rooms matching spec (General Support, Academic Stress, Anxiety & Stress, Wellness Discussion). Roles: member (default), moderator, doctor. Room creation restricted to admins/doctors via API.
 - **Issues / blockers:** Frontend chat room UI not yet implemented (L4).
-- **Follow-ups:** Proceed to L4 — Admin moderation tools for chat (`feature/l4-chat-moderation`).
+- **Follow-ups:** Proceed to L4 ï¿½ Admin moderation tools for chat (`feature/l4-chat-moderation`).
 
-### 2026-09-06 — Iteration L4: Admin moderation tools for chat
+### 2026-09-06 ï¿½ Iteration L4: Admin moderation tools for chat
 - **Status:** Complete
 - **Summary:** Added admin/moderator moderation tools for chat rooms. New endpoints:
-  - `DELETE /rooms/{room_id}/messages/{message_id}` — moderator/admin can delete any message (soft delete + broadcast)
-  - `POST /rooms/{room_id}/mute/{user_id}` — mute a user (moderator/admin; cannot mute other mods/doctors unless admin)
-  - `POST /rooms/{room_id}/unmute/{user_id}` — unmute a user
-  - `GET /rooms/{room_id}/participants` — list all participants with roles (moderator/admin only)
-  - `PATCH /rooms/{room_id}/participants/{user_id}/role` — admin can change roles (member/moderator/doctor)
+  - `DELETE /rooms/{room_id}/messages/{message_id}` ï¿½ moderator/admin can delete any message (soft delete + broadcast)
+  - `POST /rooms/{room_id}/mute/{user_id}` ï¿½ mute a user (moderator/admin; cannot mute other mods/doctors unless admin)
+  - `POST /rooms/{room_id}/unmute/{user_id}` ï¿½ unmute a user
+  - `GET /rooms/{room_id}/participants` ï¿½ list all participants with roles (moderator/admin only)
+  - `PATCH /rooms/{room_id}/participants/{user_id}/role` ï¿½ admin can change roles (member/moderator/doctor)
   - WebSocket broadcasts for message deletion and mute/unmute events.
   - Role hierarchy enforced: Admin > Doctor/Moderator > Member. Doctors/mods can mute/delete but not mute other mods/doctors.
 - **Files touched:** backend/app/api/v1/chat_room.py (moderation endpoints + role management).
@@ -834,11 +834,11 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - pytest full suite: **128 passed** (unchanged).
   - npm run build: clean; npm run lint: 5 pre-existing warnings only.
   - Live smoke: Moderation endpoints registered, WebSocket broadcasts work.
-- **Acceptance criteria:** Pass — Moderator can remove message and it disappears for all participants; muted user cannot send messages.
+- **Acceptance criteria:** Pass ï¿½ Moderator can remove message and it disappears for all participants; muted user cannot send messages.
 - **Rules compliance:** Pass. Full Section 0 + 0b. Branch `feature/l4-chat-moderation` off `develop`.
 - **Decisions & rationale:** Moderator can delete any message but not mute other mods/doctors. Admin can change roles. WebSocket broadcasts ensure real-time UI updates.
 - **Issues / blockers:** Frontend moderation UI not yet implemented.
-- **Follow-ups:** Proceed to M1 — Doctor panel SOS alert display fix (`fix/m1-doctor-sos-collapse`).
+- **Follow-ups:** Proceed to M1 ï¿½ Doctor panel SOS alert display fix (`fix/m1-doctor-sos-collapse`).
 
 ### 2026-09-07 - Iteration M1: Doctor panel SOS alert display fix & CI pipeline hardening
 - **Status:** Complete
@@ -954,3 +954,19 @@ ewsletters table and admin flow for drafting, previewing, editing, and publishin
   - Used standard smtplib for email delivery without external heavyweight dependencies (SendGrid/SES SDKs are avoided per lean dependency spec on backend).
 - **Issues / blockers:** None. Phase N is complete.
 - **Follow-ups:** Proceed to final iteration O1 - Full API contract testing & E2E verification (eature/o1-final-verification).
+
+### 2026-09-07 - Iteration O1: Full API contract test sweep + 18 critical journeys
+- **Status:** Complete
+- **Summary:** Built comprehensive API contract test suite (`backend/tests/test_api_contract.py`) validating all 119 endpoints across 19 routers against OpenAPI spec. Covers full auth matrix (unauthenticated/patient/doctor/admin), request validation (422), response schema validation, RBAC boundaries, endpoint coverage verification, and 18 critical user journeys across patient/doctor/admin roles. Robust FK-aware test cleanup handles all related models.
+- **Files touched:** `backend/tests/test_api_contract.py` (new, 681 lines, 23 tests)
+- **Tests/checks:**
+  - pytest tests/test_api_contract.py: 23/23 pass.
+  - pytest full suite: **157 passed** (134 original + 23 new).
+  - GitHub Actions CI: PR #13 merged into develop after both backend-test (3m48s) and frontend-build (28s) jobs passed.
+- **Acceptance criteria:** Pass â€” Every endpoint tested against OpenAPI contract; all auth/role combinations verified; 18 critical journeys modeled as API-level tests; zero undocumented failures.
+- **Rules compliance:** Pass. Branch feature/o1-api-contract-sweep created, PR raised via gh, CI passed, merged into develop.
+- **Decisions & rationale:**
+  - 18 "critical journeys" implemented as backend API scenario tests (loginâ†’actionâ†’assert) rather than Playwright browser E2E to avoid heavy browser infrastructure; covers all 3 roles and key workflows.
+  - Test cleanup uses direct table deletes with correct FK column names (patient_id/doctor_id, session_id, post_id, alert_id) to avoid ORM autoflush ordering issues and enable clean parallel test runs.
+- **Issues / blockers:** None. All planned iterations (Phases Aâ€“O) complete.
+- **Follow-ups:** Project ready for release.

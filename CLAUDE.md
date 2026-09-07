@@ -1,15 +1,13 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–O, student panel polish onward)
-- Last completed iteration: N6 & N7 — Email delivery integration & in-app notification triggers
+- Last completed iteration: O1 — Full API contract test sweep + 18 critical journeys
 - Status: Complete
 - What changed:
-  - **Email Delivery Integration (N6):** Added `app/services/email_service.py` to handle dynamic SMTP outbound email dispatch. Wired it into `POST /campaigns/{id}/send`. Falls back cleanly to simulated logs when SMTP isn't configured, saving delivery status/errors per-recipient correctly.
-  - **In-App Notification Triggers (N7):** Upgraded `NotificationRecord` schema (nullable `alert_id`, added `link_url`). 
-  - Wired triggers so publishing a Resource or Newsletter automatically creates a broadcast in-app notification targeting "All Patients".
-  - Communication campaigns targeting "in_app" dynamically trigger notifications.
+  - **O1 Contract Test Suite**: Added `backend/tests/test_api_contract.py` with 23 tests covering all 119 endpoints across 19 routers with full auth matrix (unauthenticated/patient/doctor/admin), request validation (422), response schema validation, RBAC boundaries, and 18 critical user journeys.
+  - **Test cleanup**: Robust FK-aware cleanup for all related models (RiskAlert, ChatSession/ChatMessage, CommunityPost/CommunityComment, NotificationRecord, Appointment, ClinicalNote, etc.)
 - New/modified modules:
-  - Backend: `app/services/email_service.py`, `app/services/notification_service.py`, `app/models/notification.py`, `tests/test_email_notifications.py`.
+  - Backend: `backend/tests/test_api_contract.py` (new, 681 lines)
 - Verification:
-  - Backend full suite: **134 passed** (2 new testing automatic triggers and simulated flow).
-  - GitHub Actions CI: **Both jobs PASSED**. PR #12 merged into `develop`.
-- Next: O1 — Full API Contract Test Sweep + Frontend E2E + Report.
+  - Backend full suite: **157 passed** (134 original + 23 new contract tests)
+  - GitHub Actions CI: **Both jobs PASSED** (backend-test 3m48s, frontend-build 28s). PR #13 merged into `develop`.
+- Next: All planned iterations complete. Phase O done. Project ready for release.
