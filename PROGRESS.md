@@ -907,3 +907,18 @@ ewsletters table and admin flow for drafting, previewing, editing, and publishin
   - published_at timestamp is set automatically when is_published becomes true.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to N4 - Newsletter display in-app (eature/n4-newsletter-display).
+
+### 2026-09-07 - Iteration N4: Newsletter display in-app
+- **Status:** Complete
+- **Summary:** Integrated published newsletters/bulletins into the student-facing Wellness Library page (/patient/library). Added a tab toggle between "Wellness Library" and "Campus Bulletins". Bulletins list dynamically from GET /newsletters and provide search, summary badges, and full-screen reading modal.
+- **Files touched:** rontend/src/pages/patient/WellnessLibraryPage.tsx.
+- **Tests/checks:**
+  - pytest full suite: **131 passed**.
+  - npm run build: clean (built in 1.29s).
+  - GitHub Actions CI: PR #10 merged into develop after both ackend-test and rontend-build jobs passed.
+- **Acceptance criteria:** Pass - Published newsletters are immediately visible and readable to students upon publishing via the in-app Campus Bulletins tab.
+- **Rules compliance:** Pass. Branch eature/n4-newsletter-display created, PR raised via gh, CI passed, merged into develop.
+- **Decisions & rationale:**
+  - Integrated into Wellness Library UI to create a unified student resource & information center.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to N5 - Communication campaign engine (eature/n5-communication-campaigns).

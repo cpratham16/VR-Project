@@ -1,20 +1,15 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–O, student panel polish onward)
-- Last completed iteration: N3 — Newsletter creation & management
+- Last completed iteration: N4 — Newsletter display in-app
 - Status: Complete
 - What changed:
-  - **Newsletter Data Model & API:** Created `newsletters` database table with Alembic migration (`d47a16105d92_add_newsletters_table.py`).
-  - Added Pydantic schemas in `app/schemas/newsletter.py` and FastAPI router in `app/api/v1/newsletters.py`:
-    - `POST /api/v1/newsletters` — Admin create newsletter draft/published
-    - `GET /api/v1/newsletters` — List newsletters (students see published only; admin sees all)
-    - `GET /api/v1/newsletters/{id}` — Get newsletter details (404 if draft for non-admin)
-    - `PATCH /api/v1/newsletters/{id}` — Admin update newsletter / publish
-    - `DELETE /api/v1/newsletters/{id}` — Admin delete newsletter
-  - Added unit test suite in `tests/test_newsletters.py`.
+  - **Newsletter In-App Display:** Integrated "Campus Bulletins" tab into the student Wellness Library (`/patient/library`).
+  - Students can seamlessly switch between curated wellness resources and official campus newsletters/bulletins.
+  - Interactive cards display bulletin titles, publication dates, summaries, and full modal reader view.
 - New/modified modules:
-  - Backend: `app/models/newsletter.py`, `app/schemas/newsletter.py`, `app/api/v1/newsletters.py`, `tests/test_newsletters.py`
+  - Frontend: `src/pages/patient/WellnessLibraryPage.tsx`
 - Verification:
-  - Backend full suite: **130 passed** (1 new).
+  - Backend full suite: **131 passed**.
   - Frontend `npm run build`: clean.
-  - GitHub Actions CI: **Both jobs (`backend-test` & `frontend-build`) PASSED**. PR #9 merged into `develop`.
-- Next: N4 — Newsletter display in-app (`feature/n4-newsletter-display`).
+  - GitHub Actions CI: **Both jobs (`backend-test` & `frontend-build`) PASSED**. PR #10 merged into `develop`.
+- Next: N5 — Communication campaign engine (`feature/n5-communication-campaigns`).
