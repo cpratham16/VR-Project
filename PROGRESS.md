@@ -890,3 +890,20 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - Default category is 'general' as specified in resources database schema.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to N3 - Newsletter creation & management (eature/n3-newsletter-management).
+
+### 2026-09-07 - Iteration N3: Newsletter creation & management
+- **Status:** Complete
+- **Summary:** Built the 
+ewsletters table and admin flow for drafting, previewing, editing, and publishing newsletters. Added REST endpoints under /api/v1/newsletters for admin CRUD and public/patient read access for published newsletters. Tested with full lifecycle test in 	est_newsletters.py.
+- **Files touched:** ackend/app/models/newsletter.py, ackend/app/schemas/newsletter.py, ackend/app/api/v1/newsletters.py, ackend/app/api/v1/router.py, ackend/app/models/__init__.py, ackend/alembic/versions/d47a16105d92_add_newsletters_table.py, ackend/tests/test_newsletters.py.
+- **Tests/checks:**
+  - pytest tests/test_newsletters.py: 1/1 pass.
+  - pytest full suite: **130 passed**.
+  - npm run build: clean.
+  - GitHub Actions CI: PR #9 merged into develop after both ackend-test and rontend-build jobs passed.
+- **Acceptance criteria:** Pass - Admin can draft, preview, publish, edit, and delete newsletters; non-admins cannot access unpublished drafts.
+- **Rules compliance:** Pass. Branch eature/n3-newsletter-management created, PR raised via gh, CI passed, merged into develop.
+- **Decisions & rationale:**
+  - published_at timestamp is set automatically when is_published becomes true.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to N4 - Newsletter display in-app (eature/n4-newsletter-display).
