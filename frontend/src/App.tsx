@@ -11,6 +11,7 @@ import ScreeningPage from './pages/patient/screening/ScreeningPage';
 import MoodTrackerPage from './pages/patient/mood/MoodTrackerPage';
 import AIChatPage from './pages/patient/chat/AIChatPage';
 import CommunityPage from './pages/patient/community/CommunityPage';
+import WellnessLibraryPage from './pages/patient/WellnessLibraryPage';
 import VRTherapyPage from './pages/patient/vr/VRTherapyPage';
 import DiaryPage from './pages/patient/diary/DiaryPage';
 import DoctorTriageDashboard from './pages/doctor/TriageDashboard';
@@ -133,6 +134,13 @@ function AppContent() {
             <ProtectedRoute allowedRoles={['patient']}>
               <RequireOnboarding>
                 <AIChatPage />
+              </RequireOnboarding>
+            </ProtectedRoute>
+          } />
+          <Route path="library" element={
+            <ProtectedRoute allowedRoles={['patient']}>
+              <RequireOnboarding>
+                <WellnessLibraryPage />
               </RequireOnboarding>
             </ProtectedRoute>
           } />
