@@ -839,3 +839,19 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
 - **Decisions & rationale:** Moderator can delete any message but not mute other mods/doctors. Admin can change roles. WebSocket broadcasts ensure real-time UI updates.
 - **Issues / blockers:** Frontend moderation UI not yet implemented.
 - **Follow-ups:** Proceed to M1 — Doctor panel SOS alert display fix (`fix/m1-doctor-sos-collapse`).
+
+### 2026-09-07 - Iteration M1: Doctor panel SOS alert display fix & CI pipeline hardening
+- **Status:** Complete
+- **Summary:** Upgraded the doctor Clinical Triage Dashboard (TriageDashboard.tsx) with a collapsible SOS emergency alert banner (showAlertsCollapsed toggle state). When emergency risk alerts exist, they remain prominent at the top of the dashboard but can be collapsed ("Collapse Alerts" / "Expand Alerts") so they do not block the patient table below. Fixed pre-existing syntax errors in TriageDashboard.tsx. Additionally, hardened .github/workflows/ci.yml by setting QDRANT_URL: ":memory:" and GROQ_API_KEY: "dummy-groq-key-for-tests", and added PR triggers for develop branch.
+- **Files touched:** .github/workflows/ci.yml, rontend/src/pages/doctor/TriageDashboard.tsx.
+- **Tests/checks:**
+  - pytest full suite: **128 passed** in 2m 13s.
+  - npm run build: clean (built in 1.37s).
+  - GitHub Actions CI: PR #6 merged into develop after both ackend-test and rontend-build jobs passed.
+- **Acceptance criteria:** Pass - Emergency alerts banner is prominent and clear, but can be collapsed/expanded by the doctor without obscuring patient triage controls.
+- **Rules compliance:** Pass. Branch ix/m1-doctor-sos-collapse created, PR raised via gh, CI passed, merged into develop.
+- **Decisions & rationale:**
+  - Alert count is always visible in the banner header even when collapsed.
+  - CI environment needed explicit in-memory Qdrant URL to prevent remote connection failures during unit tests.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to Phase N (Admin Resource / Communication Suite) starting with N1.

@@ -1,21 +1,15 @@
 ## Current Status
-- Active plan: Implementation Plan 3 (Phases H–N, student panel polish onward)
-- Last completed iteration: L4 — Admin moderation tools for chat
+- Active plan: Implementation Plan 3 (Phases H–O, student panel polish onward)
+- Last completed iteration: M1 — Doctor panel SOS alert display fix & CI pipeline hardening
 - Status: Complete
 - What changed:
-  - **Admin moderation tools for chat:** Added moderation endpoints to `/api/v1/patient/chat/`:
-    - `DELETE /rooms/{room_id}/messages/{message_id}` — moderator/admin can delete any message
-    - `POST /rooms/{room_id}/mute/{user_id}` — mute a user in a room
-    - `POST /rooms/{room_id}/unmute/{user_id}` — unmute a user
-    - `GET /rooms/{room_id}/participants` — list participants with roles
-    - `PATCH /rooms/{room_id}/participants/{user_id}/role` — admin can change roles (member/moderator/doctor)
-  - **WebSocket:** Real-time broadcasts for message deletion, mute/unmute events.
-  - **Role hierarchy enforced:** Admin can manage all; Doctor/Moderator can mute/delete but not mute other mods/doctors; Admin can change roles.
+  - **Doctor panel SOS alert display fix:** Added a `showAlertsCollapsed` toggle state to `TriageDashboard.tsx`. Emergency risk alerts are now collapsible ("Collapse Alerts" / "Expand Alerts") so they remain visible/noticeable without blocking the doctor's view of the triage table. Fixed pre-existing syntax errors in `TriageDashboard.tsx` (missing filter closing paren and stray token).
+  - **CI Pipeline Hardening:** Updated `.github/workflows/ci.yml` with `QDRANT_URL: ":memory:"` and `GROQ_API_KEY: "dummy-groq-key-for-tests"`, and enabled PR triggers on `develop` branch.
 - New/modified modules:
-  - Backend: `app/api/v1/chat_room.py` (moderation endpoints + role management).
+  - Frontend: `src/pages/doctor/TriageDashboard.tsx`
+  - CI: `.github/workflows/ci.yml`
 - Verification:
-  - Backend full suite: **128 passed** (unchanged).
-  - Frontend `npm run build`: clean; `npm run lint`: 5 pre-existing warnings only.
-  - Live smoke: Moderation endpoints registered, WebSocket broadcasts work.
-- Known issues / follow-ups: Frontend moderation UI not yet implemented. Next: M1 — Doctor panel SOS alert display fix (`fix/m1-doctor-sos-collapse`).
-- Next: M1.
+  - Backend full suite: **128 passed**.
+  - Frontend `npm run build`: clean (6.0s).
+  - GitHub Actions CI: **Both jobs (`backend-test` & `frontend-build`) PASSED**. PR #6 merged into `develop`.
+- Next: N1 — Resource Library (Admin & Patient) (`feature/n1-resource-library`).
