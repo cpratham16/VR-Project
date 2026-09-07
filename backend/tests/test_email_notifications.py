@@ -57,10 +57,12 @@ async def test_publishing_triggers_in_app_notifications():
 
         async with AsyncSessionLocal() as db:
             notifs = (await db.execute(
-                select(NotificationRecord).where(NotificationRecord.recipient_type == "resource_announcement")
+                select(NotificationRecord).where(
+                    NotificationRecord.recipient_type == "resource_announcement",
+                    NotificationRecord.content_preview.like("%Coping Strategies Vol 1%")
+                )
             )).scalars().all()
             assert len(notifs) >= 1
-            assert "Coping Strategies Vol 1" in notifs[-1].content_preview
 
         # 2. Publishing a newsletter generates an in-app notification record
         nl_res = await ac.post("/api/v1/newsletters", json={
@@ -72,7 +74,9 @@ async def test_publishing_triggers_in_app_notifications():
 
         async with AsyncSessionLocal() as db:
             notifs = (await db.execute(
-                select(NotificationRecord).where(NotificationRecord.recipient_type == "newsletter_announcement")
+                select(NotificationRecord).where(
+                    NotificationRecord.recipient_type == "newsletter_announcement",
+                    NotificationRecord.content_preview.like("%Weekly Health Alert%")
+                )
             )).scalars().all()
             assert len(notifs) >= 1
-            assert "Weekly Health Alert" in notifs[-1].content_preview
