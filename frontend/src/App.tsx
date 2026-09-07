@@ -23,6 +23,7 @@ import DoctorAppointmentsPage from './pages/doctor/DoctorAppointments';
 import DoctorOnboarding from './pages/doctor/DoctorOnboarding';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import DoctorApprovalQueue from './pages/admin/DoctorApprovalQueue';
+import CampaignsPage from './pages/admin/CampaignsPage';
 import UpdateProfilePage from './pages/patient/account/UpdateProfilePage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { apiClient } from './api/client';
@@ -228,6 +229,11 @@ function AppContent() {
           <Route path="doctors" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <DoctorApprovalQueue />
+            </ProtectedRoute>
+          } />
+          <Route path="campaigns" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <CampaignsPage />
             </ProtectedRoute>
           } />
         </Route>

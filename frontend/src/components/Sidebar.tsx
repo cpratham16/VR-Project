@@ -28,6 +28,7 @@ const DOCTOR_NAV: NavItem[] = [
 
 const ADMIN_NAV: NavItem[] = [
   { to: '/admin/doctors', label: 'Doctor Approvals', icon: '🪪' },
+  { to: '/admin/campaigns', label: 'Campaigns', icon: '📢' },
   { to: '/admin/dashboard', label: 'Admin Panel', icon: '📊' },
 ];
 
