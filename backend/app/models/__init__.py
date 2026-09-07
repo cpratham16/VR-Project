@@ -16,5 +16,6 @@ from app.models.vr import VRScenario, VRSession, VRTelemetry
 from app.models.anonymized import RegionalAggregate
 from app.models.tracing import TracingSpan
 from app.models.resource import Resource, UserResourceProgress
+from app.models.newsletter import Newsletter
 
 
