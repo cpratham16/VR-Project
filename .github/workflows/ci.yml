@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
 jobs:
   backend-test:
@@ -28,9 +28,10 @@ jobs:
           --health-retries=5
     env:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/vr_mental_health
-      GROQ_API_KEY: ""
+      GROQ_API_KEY: "dummy-groq-key-for-tests"
       GEMINI_API_KEY: ""
       EMBEDDING_PROVIDER: fastembed
+      QDRANT_URL: ":memory:"
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
