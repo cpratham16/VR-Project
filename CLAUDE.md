@@ -1,20 +1,17 @@
 ## Current Status
 - Active plan: Implementation Plan 3 (Phases H–O, student panel polish onward)
-- Last completed iteration: N1 — Resource data model + upload/management
+- Last completed iteration: N2 — Wellness Library (student-facing)
 - Status: Complete
 - What changed:
-  - **Resource data model + management API:** Created `resources` database table with Alembic migration (`0434d2bb2528_add_resources_table.py`).
-  - Added Pydantic schemas in `app/schemas/resource.py` and FastAPI router in `app/api/v1/resources.py`:
-    - `POST /api/v1/resources` — Admin create resource draft/published
-    - `GET /api/v1/resources` — List resources (public/patient sees published only; admin sees all/filtered)
-    - `GET /api/v1/resources/{id}` — Get resource details (404 if draft for non-admin)
-    - `PATCH /api/v1/resources/{id}` — Admin update resource metadata/status
-    - `DELETE /api/v1/resources/{id}` — Admin delete resource
-  - Added unit test suite in `tests/test_resources.py`.
+  - **Wellness Library:** Built student-facing wellness library (`/patient/library`).
+  - Added table `user_resource_progress` for tracking saved status, progress (0-100%), and completion status.
+  - Added API endpoints: `POST /api/v1/resources/{id}/progress` and `GET /api/v1/resources/my-library`.
+  - Frontend: Interactive grid with filters (category, search), progress tracking, "Save for Later" toggle, and a document reader modal.
 - New/modified modules:
-  - Backend: `app/models/resource.py`, `app/schemas/resource.py`, `app/api/v1/resources.py`, `app/api/deps.py`, `tests/test_resources.py`
+  - Backend: `app/models/resource.py` (new model), `app/schemas/resource.py`, `app/api/v1/resources.py`, `tests/test_wellness_library.py` (new).
+  - Frontend: `src/pages/patient/WellnessLibraryPage.tsx`, `App.tsx`, `components/Sidebar.tsx`.
 - Verification:
-  - Backend full suite: **129 passed** (1 new).
+  - Backend full suite: **129 passed**.
   - Frontend `npm run build`: clean.
-  - GitHub Actions CI: **Both jobs (`backend-test` & `frontend-build`) PASSED**. PR #7 merged into `develop`.
-- Next: N2 — Wellness Library (student-facing) (`feature/n2-wellness-library`).
+  - GitHub Actions CI: **Both jobs (`backend-test` & `frontend-build`) PASSED**. PR #8 merged into `develop`.
+- Next: N3 — Newsletter creation & management (`feature/n3-newsletter-management`).

@@ -872,3 +872,21 @@ pm run build clean; lint **5 pre-existing warnings only**; pytest full suite **9
   - Datetimes use UTC naive format matching Postgres schema conventions.
 - **Issues / blockers:** None.
 - **Follow-ups:** Proceed to N2 - Wellness Library (student-facing) (eature/n2-wellness-library).
+
+### 2026-09-07 - Iteration N2: Wellness Library (student-facing)
+- **Status:** Complete
+- **Summary:** Implemented the student-facing wellness library UI and back-end progress tracking. Added user_resource_progress table and endpoints POST /resources/{id}/progress (tracking updates) and GET /resources/my-library (fetch all resources including progress). Frontend features dynamic filtering by category/search, "Save for Later" toggle, progress bars, and a reader modal with saving functionality.
+- **Files touched:** .github/workflows/ci.yml (N/A, already applied), ackend/app/models/resource.py, ackend/app/models/__init__.py, ackend/alembic/versions/fca201752461_add_user_resource_progress_table.py, ackend/app/schemas/resource.py, ackend/app/api/v1/resources.py, ackend/tests/test_wellness_library.py, rontend/src/App.tsx, rontend/src/components/Sidebar.tsx, rontend/src/pages/patient/WellnessLibraryPage.tsx.
+- **Tests/checks:**
+  - pytest tests/test_wellness_library.py: 1/1 pass.
+  - pytest full suite: **129 passed**.
+  - npm run build: clean (built in 1.53s).
+  - GitHub Actions CI: PR #8 merged into develop after both ackend-test and rontend-build jobs passed.
+- **Acceptance criteria:** Pass - Student can browse/search resources, save for later, update reading progress, and mark as completed; changes persist and are visible in my-library.
+- **Rules compliance:** Pass. Branch eature/n2-wellness-library created, PR raised via gh, CI passed, merged into develop.
+- **Decisions & rationale:**
+  - Used UniqueConstraint on (user_id, resource_id) to prevent progress duplication.
+  - Progress updates cap between 0 and 100%.
+  - Default category is 'general' as specified in resources database schema.
+- **Issues / blockers:** None.
+- **Follow-ups:** Proceed to N3 - Newsletter creation & management (eature/n3-newsletter-management).
