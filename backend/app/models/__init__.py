@@ -15,4 +15,6 @@ from app.models.community import CommunityPost, CommunityComment
 from app.models.vr import VRScenario, VRSession, VRTelemetry
 from app.models.anonymized import RegionalAggregate
 from app.models.tracing import TracingSpan
+from app.models.resource import Resource
+
 
